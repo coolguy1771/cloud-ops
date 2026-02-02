@@ -10,7 +10,7 @@ spec:
     labels:
       app.kubernetes.io/name: *app
   interval: 1h
-  path: ./rackspace/apps/network/external-dns/app
+  path: ./kubernetes/apps/network/external-dns/app
   prune: true
   sourceRef:
     kind: GitRepository
