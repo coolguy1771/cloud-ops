@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: mimir-write-jwt
+  namespace: monitoring
+spec:
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      matchLabels:
+        app: mimir-write
+  jwt:
+    providers:
+      - name: duo-m2m
+        issuer: "https://sso-3da0e7d4.sso.duosecurity.com/oauth/DIV21P82KMG9NOTNQW6J"
+        audiences:
+          - mimir
+        remoteJWKS:
+          uri: "https://sso-3da0e7d4.sso.duosecurity.com/oauth/DIV21P82KMG9NOTNQW6J/jwks"
+        claimToHeaders:
+          - claim: sub
+            header: X-Scope-OrgID
+  authorization:
+    defaultAction: Deny
+    rules:
+      - name: require-write-scope
+        action: Allow
+        principal:
+          jwt:
+            provider: duo-m2m
+            scopes:
+              - mimir:write

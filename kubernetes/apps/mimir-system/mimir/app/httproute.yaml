@@ -1,0 +1,142 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# HTTPRoute for Mimir write/ingest paths (requires mimir:write scope)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mimir-write
+  labels:
+    app: mimir-write
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: mimir.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: envoy-external
+      namespace: network
+      sectionName: https
+  hostnames:
+    - mimir.cloud.witl.xyz
+  rules:
+    # Distributor - data ingestion
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/push
+        - path:
+            type: PathPrefix
+            value: /otlp/v1/metrics
+        - path:
+            type: PathPrefix
+            value: /distributor
+      backendRefs:
+        - name: mimir-distributor
+          port: 8080
+    # Compactor - block upload
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/upload/block
+      backendRefs:
+        - name: mimir-compactor
+          port: 8080
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# HTTPRoute for Mimir read/query paths (requires mimir:read scope)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mimir-read
+  labels:
+    app: mimir
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: mimir.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: envoy
+      namespace: network
+      sectionName: https
+  hostnames:
+    - mimir.cloud.witl.xyz
+  rules:
+    # Query Frontend - Prometheus-compatible query API
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/query
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/series
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/labels
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/label
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/metadata
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/read
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/cardinality
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/format_query
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/status
+        - path:
+            type: PathPrefix
+            value: /api/v1/status/buildinfo
+      backendRefs:
+        - name: mimir-query-frontend
+          port: 8080
+    # Querier - user stats
+    - matches:
+        - path:
+            type: Exact
+            value: /api/v1/user_stats
+      backendRefs:
+        - name: mimir-querier
+          port: 8080
+    # Query Frontend - user limits
+    - matches:
+        - path:
+            type: Exact
+            value: /api/v1/user_limits
+      backendRefs:
+        - name: mimir-query-frontend
+          port: 8080
+    # Ruler - rule listing (Prometheus-compatible)
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/rules
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/alerts
+        - path:
+            type: PathPrefix
+            value: /prometheus/config/v1/rules
+        - path:
+            type: PathPrefix
+            value: /ruler
+      backendRefs:
+        - name: mimir-ruler
+          port: 8080
+    # Alertmanager
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /alertmanager
+        - path:
+            type: PathPrefix
+            value: /multitenant_alertmanager
+        - path:
+            type: PathPrefix
+            value: /api/v1/alerts
+      backendRefs:
+        - name: mimir-alertmanager
+          port: 8080

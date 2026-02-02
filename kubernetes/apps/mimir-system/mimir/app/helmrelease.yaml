@@ -1,0 +1,217 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mimir
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mimir-distributed
+  interval: 1h
+  timeout: 10m
+  values:
+    global:
+      extraEnvFrom:
+        - secretRef:
+            name: mimir-s3-credentials
+    mimir:
+      structuredConfig:
+        common:
+          storage:
+            backend: s3
+            s3:
+              endpoint: "${S3_ENDPOINT}"
+              access_key_id: "${S3_ACCESS_KEY_ID}"
+              secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+              bucket_name: "${MIMIR_BUCKET}"
+              insecure: false
+
+        multitenancy_enabled: true
+
+        # Blocks storage configuration with prefix
+        blocks_storage:
+          storage_prefix: blocks
+
+        # Ruler storage configuration with different prefix
+        ruler_storage:
+          storage_prefix: ruler
+
+        # Alertmanager storage configuration with different prefix
+        alertmanager_storage:
+          storage_prefix: alertmanager
+
+        # Limits configuration
+        limits:
+          max_global_series_per_user: 1000000
+          max_global_series_per_metric: 100000
+          ingestion_rate: 100000
+          ingestion_burst_size: 200000
+
+    alertmanager:
+      persistentVolume:
+        enabled: true
+        storageClass: ssd
+      replicas: 2
+      resources:
+        limits:
+          cpu: 1.4
+          memory: 1.4Gi
+        requests:
+          cpu: 1.4
+          memory: 1.4Gi
+      statefulSet:
+        enabled: true
+
+    compactor:
+      persistentVolume:
+        size: 20Gi
+        storageClass: ssd
+      resources:
+        limits:
+          cpu: 1.4
+          memory: 2.1Gi
+        requests:
+          cpu: 1.4
+          memory: 2.1Gi
+
+    distributor:
+      replicas: 2
+      resources:
+        limits:
+          cpu: 3.5
+          memory: 5.7Gi
+        requests:
+          cpu: 3.5
+          memory: 5.7Gi
+
+    ingester:
+      persistentVolume:
+        size: 50Gi
+        storageClass: ssd
+      replicas: 3
+      resources:
+        limits:
+          cpu: 5
+          memory: 12Gi
+        requests:
+          cpu: 5
+          memory: 12Gi
+      topologySpreadConstraints: {}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - ingester
+              topologyKey: kubernetes.io/hostname
+      zoneAwareReplication:
+        topologyKey: kubernetes.io/hostname
+
+    admin-cache:
+      enabled: true
+      replicas: 2
+
+    chunks-cache:
+      enabled: true
+      replicas: 2
+
+    index-cache:
+      enabled: true
+      replicas: 3
+
+    metadata-cache:
+      enabled: true
+
+    results-cache:
+      enabled: true
+
+    minio:
+      enabled: false
+
+    overrides_exporter:
+      replicas: 1
+      resources:
+        limits:
+          cpu: 100m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+
+    querier:
+      replicas: 1
+      resources:
+        limits:
+          cpu: 2.8
+          memory: 5.6Gi
+        requests:
+          cpu: 2.8
+          memory: 5.6Gi
+
+    query_frontend:
+      replicas: 1
+      resources:
+        limits:
+          cpu: 2.8
+          memory: 2.8Gi
+        requests:
+          cpu: 2.8
+          memory: 2.8Gi
+
+    ruler:
+      replicas: 1
+      resources:
+        limits:
+          cpu: 1.4
+          memory: 2.8Gi
+        requests:
+          cpu: 1.4
+          memory: 2.8Gi
+
+    store_gateway:
+      persistentVolume:
+        size: 10Gi
+        storageClass: ssd
+      replicas: 3
+      resources:
+        limits:
+          cpu: 1.4
+          memory: 2.1Gi
+        requests:
+          cpu: 1.4
+          memory: 2.1Gi
+      topologySpreadConstraints: {}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - store-gateway
+              topologyKey: kubernetes.io/hostname
+      zoneAwareReplication:
+        topologyKey: kubernetes.io/hostname
+
+    gateway:
+      enabled: false
+      replicas: 1
+      resources:
+        limits:
+          cpu: 1.4
+          memory: 731Mi
+        requests:
+          cpu: 1.4
+          memory: 731Mi
+
+    nginx:
+      enabled: false
+
+    metaMonitoring:
+      serviceMonitor:
+        enabled: true

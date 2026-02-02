@@ -1,201 +1,46 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: external-dns
+  name: &app cloudflare-dns
 spec:
   chartRef:
     kind: OCIRepository
-    name: external-dns
+    name: cloudflare-dns
   interval: 1h
-  timeout: 10m
   values:
-    # =========================================================================
-    # Provider Configuration - AWS Route53
-    # =========================================================================
+    fullnameOverride: *app
     provider:
-      name: aws
-
-    # =========================================================================
-    # Source Configuration
-    # =========================================================================
-    sources:
-      - gateway-httproute
-      - gateway-grpcroute
-      - gateway-tcproute
-      - gateway-tlsroute
-      - gateway-udproute
-      - service
-      - ingress
-
-    # Domain filter - only manage records in these domains
-    domainFilters:
-      - dev.icbplays.net
-
-    # Policy: sync will delete records, upsert-only will only create/update
-    policy: upsert-only
-
-    # Registry for tracking ownership
-    registry: txt
-    txtOwnerId: rackspace-external-dns
-    txtPrefix: externaldns-
-
-    # Sync interval
-    interval: 1m
-
-    # Log level
-    logLevel: info
-
-    # =========================================================================
-    # Extra Arguments for AWS
-    # =========================================================================
-    extraArgs:
-      - --aws-zone-type=public
-      - --aws-batch-change-size=1000
-      - --aws-batch-change-interval=10s
-
-    # =========================================================================
-    # AWS Roles Anywhere Configuration
-    # Uses credential_process in AWS config file
-    # =========================================================================
+      name: cloudflare
     env:
-      - name: AWS_DEFAULT_REGION
+      - name: &name CF_API_TOKEN
         valueFrom:
           secretKeyRef:
-            name: external-dns-aws-credentials
-            key: AWS_REGION
-      - name: AWS_CONFIG_FILE
-        value: /etc/aws/config
-      - name: AWS_TRUST_ANCHOR_ARN
+            name: &secret cloudflare-dns-secret
+            key: *name
+      - name: &name CF_ZONE_ID
         valueFrom:
           secretKeyRef:
-            name: external-dns-aws-credentials
-            key: AWS_TRUST_ANCHOR_ARN
-      - name: AWS_PROFILE_ARN
-        valueFrom:
-          secretKeyRef:
-            name: external-dns-aws-credentials
-            key: AWS_PROFILE_ARN
-      - name: AWS_ROLE_ARN
-        valueFrom:
-          secretKeyRef:
-            name: external-dns-aws-credentials
-            key: AWS_ROLE_ARN
-
-    extraVolumes:
-      - name: aws-credentials
-        secret:
-          secretName: external-dns-aws-credentials
-          items:
-            - key: certificate.pem
-              path: certificate.pem
-            - key: private-key.pem
-              path: private-key.pem
-      - name: aws-config
-        emptyDir: {}
-      - name: signing-helper
-        emptyDir: {}
-
-    extraVolumeMounts:
-      - name: aws-credentials
-        mountPath: /var/run/secrets/aws
-        readOnly: true
-      - name: aws-config
-        mountPath: /etc/aws
-        readOnly: true
-      - name: signing-helper
-        mountPath: /usr/local/bin/aws_signing_helper
-        subPath: aws_signing_helper
-        readOnly: true
-
-    # Init container to set up AWS Roles Anywhere credentials
-    initContainers:
-      - name: setup-aws-credentials
-        image: public.ecr.aws/aws-cli/aws-cli:2.22.35
-        command:
-          - /bin/sh
-          - -c
-          - |
-            set -e
-
-            # Download AWS signing helper
-            curl -sLo /signing-helper/aws_signing_helper \
-              https://rolesanywhere.amazonaws.com/releases/1.4.0/X86_64/Linux/aws_signing_helper
-            chmod +x /signing-helper/aws_signing_helper
-
-            # Create AWS config with credential_process
-            # The signing helper will be called by the AWS SDK to get temporary credentials
-            cat > /aws-config/config << EOF
-            [default]
-            credential_process = /usr/local/bin/aws_signing_helper credential-process --certificate /var/run/secrets/aws/certificate.pem --private-key /var/run/secrets/aws/private-key.pem --trust-anchor-arn ${AWS_TRUST_ANCHOR_ARN} --profile-arn ${AWS_PROFILE_ARN} --role-arn ${AWS_ROLE_ARN}
-            region = ${AWS_DEFAULT_REGION}
-            EOF
-
-            echo "AWS Roles Anywhere configuration complete"
-        env:
-          - name: AWS_DEFAULT_REGION
-            valueFrom:
-              secretKeyRef:
-                name: external-dns-aws-credentials
-                key: AWS_REGION
-          - name: AWS_TRUST_ANCHOR_ARN
-            valueFrom:
-              secretKeyRef:
-                name: external-dns-aws-credentials
-                key: AWS_TRUST_ANCHOR_ARN
-          - name: AWS_PROFILE_ARN
-            valueFrom:
-              secretKeyRef:
-                name: external-dns-aws-credentials
-                key: AWS_PROFILE_ARN
-          - name: AWS_ROLE_ARN
-            valueFrom:
-              secretKeyRef:
-                name: external-dns-aws-credentials
-                key: AWS_ROLE_ARN
-        volumeMounts:
-          - name: aws-config
-            mountPath: /aws-config
-          - name: signing-helper
-            mountPath: /signing-helper
-
-    # =========================================================================
-    # Resources
-    # =========================================================================
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        memory: 128Mi
-
-    # =========================================================================
-    # Service Account & RBAC
-    # =========================================================================
-    serviceAccount:
-      create: true
-      name: external-dns
-
-    rbac:
-      create: true
-      additionalPermissions:
-        - apiGroups:
-            - gateway.networking.k8s.io
-          resources:
-            - gateways
-            - httproutes
-            - grpcroutes
-            - tcproutes
-            - tlsroutes
-            - udproutes
-          verbs:
-            - get
-            - list
-            - watch
-
-    # =========================================================================
-    # Monitoring
-    # =========================================================================
+            name: *secret
+            key: *name
+    extraArgs:
+      - --cloudflare-dns-records-per-page=1000
+      - --cloudflare-proxied
+      - --crd-source-apiversion=externaldns.k8s.io/v1alpha1
+      - --crd-source-kind=DNSEndpoint
+      - --gateway-name=envoy
+      - --zone-id-filter=$(CF_ZONE_ID)
+    triggerLoopOnEvent: true
+    policy: sync
+    sources:
+      - crd
+      - gateway-httproute
+    txtOwnerId: default
+    txtPrefix: cloud.k8s.
+    domainFilters:
+      - cloud.witl.xyz
     serviceMonitor:
       enabled: true
+    podAnnotations:
+      secret.reloader.stakater.com/reload: *secret
