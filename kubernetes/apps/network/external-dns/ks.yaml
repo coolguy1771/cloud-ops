@@ -20,5 +20,5 @@ spec:
   timeout: 10m
   wait: true
   dependsOn:
-    - name: external-secrets-stores
+    - name: onepassword
       namespace: external-secrets
