@@ -1,0 +1,9 @@
+---
+# 1Password Service Account token for External Secrets SDK
+apiVersion: v1
+kind: Secret
+metadata:
+  name: onepassword-service-account
+  namespace: external-secrets
+stringData:
+  token: op://cloud-ops/1password/credential
