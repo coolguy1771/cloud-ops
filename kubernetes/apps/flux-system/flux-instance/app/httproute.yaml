@@ -11,7 +11,7 @@ spec:
   hostnames:
     - flux-webhook.cloud.witl.xyz
   parentRefs:
-    - name: envoy-external
+    - name: envoy
       namespace: network
   rules:
     - backendRefs:

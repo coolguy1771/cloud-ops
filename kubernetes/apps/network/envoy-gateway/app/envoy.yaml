@@ -47,18 +47,14 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: envoy-external
+  name: envoy
   annotations:
-    external-dns.alpha.kubernetes.io/target: &hostname external.cloud.witl.xyz
     gatus.home-operations.com/endpoint: |-
       client:
         dns-resolver: tcp://1.1.1.1:53
       group: external
 spec:
   gatewayClassName: envoy
-  infrastructure:
-    annotations:
-      external-dns.alpha.kubernetes.io/hostname: *hostname
   listeners:
     - name: http
       protocol: HTTP
@@ -158,7 +154,7 @@ metadata:
     external-dns.alpha.kubernetes.io/controller: none
 spec:
   parentRefs:
-    - name: envoy-external
+    - name: envoy
       namespace: network
       sectionName: http
   rules:
