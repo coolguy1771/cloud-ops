@@ -18,3 +18,11 @@ metadata:
   namespace: external-secrets
 data:
   key: op://cloud-ops/github-app/key
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-tunnel-id-secret
+  namespace: network
+stringData:
+  CLOUDFLARE_TUNNEL_ID: op://cloud-ops/cloudflare/tunnel_id
