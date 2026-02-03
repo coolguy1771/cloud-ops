@@ -14,6 +14,7 @@ spec:
       distribution:
         artifact: oci://ghcr.io/controlplaneio-fluxcd/flux-operator-manifests:v0.40.0
       cluster:
+        domain: cluster.local
         networkPolicy: false
       components:
         - source-controller
