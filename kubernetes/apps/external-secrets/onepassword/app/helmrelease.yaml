@@ -22,7 +22,7 @@ spec:
               tag: 1.8.1@sha256:ac6e9efe4f54cc351393fcb8f01b10e667b08b68ff47ebf6024ff93eae642e5c
             env:
               XDG_DATA_HOME: &configDir /config
-              OP_HTTP_PORT: &apiPort 80
+              OP_HTTP_PORT: &apiPort 8080
               OP_BUS_PORT: 11220
               OP_BUS_PEERS: localhost:11221
               OP_SESSION:
@@ -110,7 +110,8 @@ spec:
       app:
         ports:
           http:
-            port: *apiPort
+            port: 80
+            targetPort: *apiPort
     persistence:
       config:
         type: emptyDir
