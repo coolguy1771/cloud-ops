@@ -1,0 +1,17 @@
+---
+# Allows SecurityPolicy in mimir-system to reference Backend duo-jwks in network.
+# Required for remoteJWKS.backendRefs when policy and backend are in different namespaces.
+# See: https://gateway-api.sigs.k8s.io/api-types/referencegrant/
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-mimir-system-to-duo-jwks
+  namespace: network
+spec:
+  from:
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: mimir-system
+  to:
+    - group: gateway.envoyproxy.io
+      kind: Backend
