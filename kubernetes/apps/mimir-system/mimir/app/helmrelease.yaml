@@ -56,11 +56,10 @@ spec:
       replicas: 2
       resources:
         limits:
-          cpu: 1.4
           memory: 1.4Gi
         requests:
-          cpu: 1.4
-          memory: 1.4Gi
+          cpu: 1
+          memory: 1Gi
       statefulSet:
         enabled: true
 
@@ -70,34 +69,31 @@ spec:
         storageClass: ssdv2-performance
       resources:
         limits:
-          cpu: 1.4
           memory: 2.1Gi
         requests:
-          cpu: 1.4
-          memory: 2.1Gi
+          cpu: 1
+          memory: 1.5Gi
 
     distributor:
       replicas: 2
       resources:
         limits:
-          cpu: 3.5
           memory: 5.7Gi
         requests:
-          cpu: 3.5
-          memory: 5.7Gi
+          cpu: 2
+          memory: 4Gi
 
     ingester:
       persistentVolume:
-        size: 20Gi
+        size: 50Gi
         storageClass: ssdv2-performance
       replicas: 3
       resources:
         limits:
-          cpu: 5
           memory: 12Gi
         requests:
-          cpu: 5
-          memory: 12Gi
+          cpu: 3.5
+          memory: 8Gi
       topologySpreadConstraints: {}
       affinity:
         podAntiAffinity:
@@ -114,21 +110,23 @@ spec:
 
     admin-cache:
       enabled: true
-      replicas: 2
+      replicas: 1
 
     chunks-cache:
       enabled: true
-      replicas: 2
+      replicas: 1
 
     index-cache:
       enabled: true
-      replicas: 3
+      replicas: 1
 
     metadata-cache:
       enabled: true
+      replicas: 1
 
     results-cache:
       enabled: true
+      replicas: 1
 
     minio:
       enabled: false
@@ -137,7 +135,6 @@ spec:
       replicas: 1
       resources:
         limits:
-          cpu: 100m
           memory: 128Mi
         requests:
           cpu: 100m
@@ -147,31 +144,28 @@ spec:
       replicas: 1
       resources:
         limits:
-          cpu: 2.8
           memory: 5.6Gi
         requests:
-          cpu: 2.8
-          memory: 5.6Gi
+          cpu: 2
+          memory: 4Gi
 
     query_frontend:
       replicas: 1
       resources:
         limits:
-          cpu: 2.8
           memory: 2.8Gi
         requests:
-          cpu: 2.8
-          memory: 2.8Gi
+          cpu: 2
+          memory: 2Gi
 
     ruler:
       replicas: 1
       resources:
         limits:
-          cpu: 1.4
           memory: 2.8Gi
         requests:
-          cpu: 1.4
-          memory: 2.8Gi
+          cpu: 1
+          memory: 2Gi
 
     store_gateway:
       persistentVolume:
@@ -180,11 +174,10 @@ spec:
       replicas: 3
       resources:
         limits:
-          cpu: 1.4
           memory: 2.1Gi
         requests:
-          cpu: 1.4
-          memory: 2.1Gi
+          cpu: 1
+          memory: 1.5Gi
       topologySpreadConstraints: {}
       affinity:
         podAntiAffinity:
@@ -204,11 +197,10 @@ spec:
       replicas: 1
       resources:
         limits:
-          cpu: 1.4
           memory: 731Mi
         requests:
-          cpu: 1.4
-          memory: 731Mi
+          cpu: 1
+          memory: 512Mi
 
     nginx:
       enabled: false
