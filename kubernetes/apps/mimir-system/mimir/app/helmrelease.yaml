@@ -47,6 +47,7 @@ spec:
           max_global_series_per_metric: 100000
           ingestion_rate: 100000
           ingestion_burst_size: 200000
+          out_of_order_time_window: 5m
 
     alertmanager:
       persistentVolume:
