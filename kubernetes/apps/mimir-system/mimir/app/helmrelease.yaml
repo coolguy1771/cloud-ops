@@ -87,7 +87,7 @@ spec:
       persistentVolume:
         size: 50Gi
         storageClass: ssdv2-performance
-      replicas: 3
+      replicas: 2
       resources:
         limits:
           memory: 12Gi
@@ -171,7 +171,7 @@ spec:
       persistentVolume:
         size: 10Gi
         storageClass: ssdv2-performance
-      replicas: 3
+      replicas: 2
       resources:
         limits:
           memory: 2.1Gi
@@ -194,13 +194,6 @@ spec:
 
     gateway:
       enabled: false
-      replicas: 1
-      resources:
-        limits:
-          memory: 731Mi
-        requests:
-          cpu: 1
-          memory: 512Mi
 
     nginx:
       enabled: false
