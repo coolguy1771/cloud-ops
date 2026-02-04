@@ -23,7 +23,7 @@ spec:
             - group: gateway.envoyproxy.io
               kind: Backend
               name: duo-jwks
-              namespace: network
+              namespace: mimir-system
               port: 443
         claimToHeaders:
           - claim: sub

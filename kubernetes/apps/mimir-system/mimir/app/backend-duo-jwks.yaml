@@ -1,7 +1,6 @@
 ---
-# Backend for Duo SSO JWKS (remote JWT key fetch). Envoy requires a cluster
-# for the JWKS host when using SecurityPolicy remoteJWKS; placing this in the
-# Gateway (network) namespace ensures the proxy gets the cluster.
+# Backend for Duo SSO JWKS (remote JWT key fetch). Must be in same namespace as
+# SecurityPolicy so Envoy Gateway can resolve remoteJWKS.backendRefs.
 # See: https://gateway.envoyproxy.io/docs/tasks/security/jwt-authentication/#connect-to-a-remote-jwks
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: Backend
