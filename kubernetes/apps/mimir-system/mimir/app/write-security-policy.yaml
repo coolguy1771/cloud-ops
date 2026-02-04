@@ -19,12 +19,6 @@ spec:
           - mimir
         remoteJWKS:
           uri: "https://sso-3da0e7d4.sso.duosecurity.com/oauth/DIV21P82KMG9NOTNQW6J/jwks"
-          backendRefs:
-            - group: gateway.envoyproxy.io
-              kind: Backend
-              name: duo-jwks
-              namespace: mimir-system
-              port: 443
         claimToHeaders:
           - claim: sub
             header: X-Scope-OrgID
