@@ -13,5 +13,21 @@ spec:
     serviceMonitor:
       create: true
     web:
+      config:
+        baseURL: "https://flux-operator.cloud.witl.xyz"
+        authentication:
+          type: OAuth2
+          oauth2:
+            provider: OIDC
+            issuerURL: "https://sso-3da0e7d4.sso.duosecurity.com/oauth2/DI0DYDSK1S6R3WNBJ1UX"
       networkPolicy:
         create: true
+  valuesFrom:
+    - kind: Secret
+      name: flux-web-duo
+      valuesKey: client-id
+      targetPath: web.config.authentication.oauth2.clientID
+    - kind: Secret
+      name: flux-web-duo
+      valuesKey: client-secret
+      targetPath: web.config.authentication.oauth2.clientSecret

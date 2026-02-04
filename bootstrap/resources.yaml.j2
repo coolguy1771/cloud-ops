@@ -5,8 +5,8 @@ metadata:
   name: onepassword-secret
   namespace: external-secrets
 stringData:
-  1password-credentials.json: op://kubernetes/1password/OP_CREDENTIALS_JSON
-  token: op://kubernetes/1password/OP_CONNECT_TOKEN
+  1password-credentials.json: op://cloud-ops/1password/OP_CREDENTIALS_JSON
+  token: op://cloud-ops/1password/OP_CONNECT_TOKEN
 ---
 # GitHub App private key for ESO GithubAccessToken generator
 # NOTE: The key-base64 field must contain the base64-encoded PEM key
