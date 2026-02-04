@@ -51,8 +51,7 @@ spec:
     alertmanager:
       persistentVolume:
         enabled: true
-        size: 100Gi
-        storageClass: ssdv2
+        storageClass: ssdv2-performance
       replicas: 2
       resources:
         limits:
@@ -66,8 +65,8 @@ spec:
 
     compactor:
       persistentVolume:
-        size: 100Gi
-        storageClass: ssdv2
+        size: 20Gi
+        storageClass: ssdv2-performance
       resources:
         limits:
           cpu: 1.4
@@ -89,7 +88,7 @@ spec:
     ingester:
       persistentVolume:
         size: 100Gi
-        storageClass: ssdv2
+        storageClass: ssdv2-performance
       replicas: 3
       resources:
         limits:
@@ -175,8 +174,8 @@ spec:
 
     store_gateway:
       persistentVolume:
-        size: 100Gi
-        storageClass: ssdv2
+        size: 10Gi
+        storageClass: ssdv2-performance
       replicas: 3
       resources:
         limits:
