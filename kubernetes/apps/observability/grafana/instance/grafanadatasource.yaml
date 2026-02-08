@@ -50,7 +50,7 @@ spec:
     jsonData:
       httpHeaderName1: "X-Scope-OrgID"
       implementation: mimir
-    url: http://mimir.mimir-system.svc.cluster.local:8080/alertmanager
+    url: http://mimir.mimir-system.svc.cluster.local:8080
     secureJsonData:
       httpHeaderValue1: "${org-id}"
   valuesFrom:
