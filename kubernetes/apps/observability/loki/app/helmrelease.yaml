@@ -70,3 +70,7 @@ spec:
             name: loki-tigris-credentials
     serviceMonitor:
       enabled: true
+    test:
+      enabled: false
+    lokiCanary:
+      enabled: false

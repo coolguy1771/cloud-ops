@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
-# HTTPRoute for Loki write/ingest (requires loki:write scope). See Authentication:
-# https://grafana.com/docs/loki/latest/operations/authentication/
+# Distributor paths -> write service (requires loki:write). Paths from chart gateway.distributor.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -21,16 +20,22 @@ spec:
     - matches:
         - path:
             type: PathPrefix
+            value: /api/prom/push
+        - path:
+            type: PathPrefix
             value: /loki/api/v1/push
         - path:
             type: PathPrefix
-            value: /loki/api/v1/tail
+            value: /otlp/v1/logs
+        - path:
+            type: PathPrefix
+            value: /ui
       backendRefs:
         - name: loki-write
           port: 3100
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
-# HTTPRoute for Loki read/query (requires loki:read scope)
+# Query Frontend paths -> read service (requires loki:read). Paths from chart gateway.queryFrontend.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -50,28 +55,111 @@ spec:
     - matches:
         - path:
             type: PathPrefix
+            value: /api/prom/query
+        - path:
+            type: PathPrefix
+            value: /api/prom/label
+        - path:
+            type: PathPrefix
+            value: /api/prom/series
+        - path:
+            type: PathPrefix
+            value: /api/prom/tail
+        - path:
+            type: PathPrefix
             value: /loki/api/v1/query
         - path:
             type: PathPrefix
             value: /loki/api/v1/query_range
         - path:
             type: PathPrefix
-            value: /loki/api/v1/labels
+            value: /loki/api/v1/tail
         - path:
             type: PathPrefix
             value: /loki/api/v1/label
         - path:
             type: PathPrefix
+            value: /loki/api/v1/labels
+        - path:
+            type: PathPrefix
             value: /loki/api/v1/series
         - path:
             type: PathPrefix
-            value: /loki/api/v1/rules
+            value: /loki/api/v1/index/stats
         - path:
             type: PathPrefix
-            value: /loki/api/v1/alerts
+            value: /loki/api/v1/index/volume
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/index/volume_range
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/format_query
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/detected_field
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/detected_fields
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/detected_labels
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/patterns
         - path:
             type: PathPrefix
             value: /ready
       backendRefs:
         - name: loki-read
+          port: 3100
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# Ruler + Compactor paths -> backend service. Ruler requires loki:read, compactor delete loki:write.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: loki-backend
+  labels:
+    app: loki-backend
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: loki.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: envoy
+      namespace: network
+      sectionName: https
+  hostnames:
+    - loki.cloud.witl.xyz
+  rules:
+    # Ruler paths
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/prom/rules
+        - path:
+            type: PathPrefix
+            value: /api/prom/api/v1/rules
+        - path:
+            type: PathPrefix
+            value: /api/prom/api/v1/alerts
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/rules
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/rules
+        - path:
+            type: PathPrefix
+            value: /prometheus/api/v1/alerts
+      backendRefs:
+        - name: loki-backend
+          port: 3100
+    # Compactor paths
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/delete
+      backendRefs:
+        - name: loki-backend
           port: 3100
