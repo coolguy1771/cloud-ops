@@ -139,7 +139,7 @@ spec:
 
             memberlist:
               join_members:
-                - dnssrv+mimir-app.mimir-system.svc.cluster.local:7946
+                - dnssrv+mimir.mimir-system.svc.cluster.local:7946
 
             distributor:
               ring:
