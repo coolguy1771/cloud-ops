@@ -15,7 +15,7 @@ spec:
     controllers:
       mimir:
         replicas: 1
-        strategy: RollingUpdate
+        strategy: Recreate
         containers:
           app:
             image:
