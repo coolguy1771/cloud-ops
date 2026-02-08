@@ -16,7 +16,7 @@ spec:
     uid: prometheus
     access: proxy
     isDefault: true
-    url: http://prometheus-operated.observability.svc.cluster.local:9090
+    url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
     editable: false
     jsonData:
       timeInterval: "15s"
@@ -38,54 +38,18 @@ spec:
     access: proxy
     editable: false
     jsonData:
-      implementation: prometheus
-    url: http://alertmanager-operated.observability.svc.cluster.local:9093
+      httpHeaderName1: "X-Scope-OrgID"
+      implementation: mimir
+    url: http://mimir.mimir-system.svc.cluster.local:8080/alertmanager
+  valuesFrom:
+    - targetPath: datasource.secureJsonData.httpHeaderValue1
+      valueFrom:
+        secretKeyRef:
+          name: grafana-datasource-org
+          key: org-id
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
-# Mimir via external HTTPS; forwards logged-in user's OAuth token (mimir:read). Edit this file to change; do not edit in UI.
-apiVersion: grafana.integreatly.org/v1beta1
-kind: GrafanaDatasource
-metadata:
-  name: mimir
-spec:
-  instanceSelector:
-    matchLabels:
-      grafana.internal/instance: grafana
-  datasource:
-    type: prometheus
-    name: mimir
-    uid: mimir
-    access: proxy
-    editable: false
-    jsonData:
-      timeInterval: "15s"
-      httpMethod: POST
-      oauthPassThru: true
-    url: https://mimir.cloud.witl.xyz/prometheus
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
-# Mimir Alertmanager via external HTTPS; forwards OAuth token.
-apiVersion: grafana.integreatly.org/v1beta1
-kind: GrafanaDatasource
-metadata:
-  name: mimir-alertmanager
-spec:
-  instanceSelector:
-    matchLabels:
-      grafana.internal/instance: grafana
-  datasource:
-    type: alertmanager
-    name: mimir-alertmanager
-    uid: mimir-alertmanager
-    access: proxy
-    editable: false
-    jsonData:
-      implementation: prometheus
-      oauthPassThru: true
-    url: https://mimir.cloud.witl.xyz/alertmanager
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
-# Loki read path (gateway disabled in HelmRelease). Use internal URL so health check does not hit Envoy JWT (avoids "Jwt issuer is not configured"). Edit this file to change; do not edit in UI (editable: false).
+
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
 metadata:
@@ -100,6 +64,12 @@ spec:
     uid: loki
     access: proxy
     editable: false
-    url: https://loki.cloud.witl.xyz
+    url: http://loki-read.observability.svc.cluster.local:3100
     jsonData:
-      oauthPassThru: true
+      httpHeaderName1: "X-Scope-OrgID"
+  valuesFrom:
+    - targetPath: datasource.secureJsonData.httpHeaderValue1
+      valueFrom:
+        secretKeyRef:
+          name: grafana-datasource-org
+          key: org-id
