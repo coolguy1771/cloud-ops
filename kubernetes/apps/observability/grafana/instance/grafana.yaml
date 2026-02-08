@@ -1,0 +1,114 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafana_v1beta1.json
+# See https://grafana.github.io/grafana-operator/docs/examples/grafana/
+#
+# OAuth: create Secret "grafana-oauth" in observability namespace with keys:
+#   client-id, client-secret, issuer-url (e.g. https://<idp>/oauth2/<client_id> for Duo).
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana
+  labels:
+    grafana.internal/instance: grafana
+    dashboards: "grafana"
+spec:
+  config:
+    log:
+      mode: "console"
+    security:
+      admin_user: "admin"
+      angular_support_enabled: "true"
+    server:
+      enable_gzip: "true"
+      root_url: "https://grafana.cloud.witl.xyz"
+    analytics:
+      check_for_updates: "false"
+      check_for_plugin_updates: "false"
+      feedback_links_enabled: "false"
+      reporting_enabled: "false"
+    auth:
+      disable_login_form: "false"
+    auth.generic_oauth:
+      enabled: "true"
+      name: "OAuth"
+      allow_sign_up: "true"
+      client_id: "${GRAFANA_OAUTH_CLIENT_ID}"
+      client_secret: "${GRAFANA_OAUTH_CLIENT_SECRET}"
+      scopes: "openid email profile"
+      auth_url: "${GRAFANA_OAUTH_ISSUER_URL}/v1/authorize"
+      token_url: "${GRAFANA_OAUTH_ISSUER_URL}/v1/token"
+      api_url: "${GRAFANA_OAUTH_ISSUER_URL}/v1/userinfo"
+      email_attribute_path: "email"
+      login_attribute_path: "sub"
+      name_attribute_path: "name"
+    auth.anonymous:
+      enabled: "false"
+    metrics:
+      enabled: "true"
+    news:
+      news_feed_enabled: "false"
+    plugins:
+      plugin_admin_enabled: "false"
+  deployment:
+    spec:
+      strategy:
+        type: Recreate
+      template:
+        spec:
+          containers:
+            - name: grafana
+              env:
+                - name: GF_SECURITY_ADMIN_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-admin-password-secret
+                      key: GF_SECURITY_ADMIN_PASSWORD
+                - name: GRAFANA_OAUTH_CLIENT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-oauth
+                      key: client-id
+                - name: GRAFANA_OAUTH_CLIENT_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-oauth
+                      key: client-secret
+                - name: GRAFANA_OAUTH_ISSUER_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-oauth
+                      key: issuer-url
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: ["ALL"]}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            fsGroupChangePolicy: OnRootMismatch
+          volumes:
+            - name: grafana-data
+              persistentVolumeClaim:
+                claimName: grafana-pvc
+  httpRoute:
+    spec:
+      hostnames:
+        - grafana.cloud.witl.xyz
+      parentRefs:
+        - name: envoy
+          namespace: network
+      rules:
+        - backendRefs:
+            - name: grafana-service
+              port: 3000
+  persistentVolumeClaim:
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: ceph-block
+  disableDefaultSecurityContext: All

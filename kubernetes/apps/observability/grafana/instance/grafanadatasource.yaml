@@ -1,0 +1,84 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+# See https://grafana.github.io/grafana-operator/docs/examples/datasource/
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: prometheus
+    name: prometheus
+    uid: prometheus
+    access: proxy
+    isDefault: true
+    url: http://prometheus-operated.observability.svc.cluster.local:9090
+    editable: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: alertmanager
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: alertmanager
+    name: alertmanager
+    uid: alertmanager
+    access: proxy
+    editable: false
+    jsonData:
+      implementation: prometheus
+    url: http://alertmanager-operated.observability.svc.cluster.local:9093
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+# Mimir via external HTTPS; forwards logged-in user's OAuth token (mimir:read).
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: mimir
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: prometheus
+    name: mimir
+    uid: mimir
+    access: proxy
+    editable: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST
+      oauthPassThru: true
+    url: https://mimir.cloud.witl.xyz/prometheus
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+# Mimir Alertmanager via external HTTPS; forwards OAuth token.
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: mimir-alertmanager
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: alertmanager
+    name: mimir-alertmanager
+    uid: mimir-alertmanager
+    access: proxy
+    editable: false
+    jsonData:
+      implementation: prometheus
+      oauthPassThru: true
+    url: https://mimir.cloud.witl.xyz/alertmanager
