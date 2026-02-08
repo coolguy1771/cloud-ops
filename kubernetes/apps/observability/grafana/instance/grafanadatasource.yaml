@@ -24,13 +24,13 @@ spec:
       httpHeaderName1: "X-Scope-OrgID"
       implementation: mimir
     secureJsonData:
-      httpHeaderValue1: ${org-id}
+      httpHeaderValue1: ${org_id}
   valuesFrom:
     - targetPath: datasource.secureJsonData.httpHeaderValue1
       valueFrom:
         secretKeyRef:
           name: grafana-datasource-org
-          key: org-id
+          key: org_id
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
@@ -52,13 +52,13 @@ spec:
       implementation: mimir
     url: http://mimir.mimir-system.svc.cluster.local:8080
     secureJsonData:
-      httpHeaderValue1: ${org-id}
+      httpHeaderValue1: ${org_id}
   valuesFrom:
     - targetPath: datasource.secureJsonData.httpHeaderValue1
       valueFrom:
         secretKeyRef:
           name: grafana-datasource-org
-          key: org-id
+          key: org_id
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 
@@ -80,10 +80,10 @@ spec:
     jsonData:
       httpHeaderName1: "X-Scope-OrgID"
     secureJsonData:
-      httpHeaderValue1: ${org-id}
+      httpHeaderValue1: ${org_id}
   valuesFrom:
     - targetPath: datasource.secureJsonData.httpHeaderValue1
       valueFrom:
         secretKeyRef:
           name: grafana-datasource-org
-          key: org-id
+          key: org_id
