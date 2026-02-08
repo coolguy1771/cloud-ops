@@ -55,7 +55,7 @@ spec:
                   failureThreshold: 3
             securityContext:
               allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: true
+              readOnlyRootFilesystem: false
               capabilities:
                 drop: ["ALL"]
             resources:
@@ -64,12 +64,6 @@ spec:
                 memory: 4Gi
               limits:
                 memory: 12Gi
-    defaultPodOptions:
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 10001
-        runAsGroup: 10001
-        fsGroup: 10001
     service:
       app:
         ports:
