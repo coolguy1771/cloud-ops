@@ -25,6 +25,7 @@ spec:
               - -target=all
               - -config.file=/etc/mimir/mimir.yaml
               - -config.expand-env=true
+              - -activity-tracker.filepath=/data/activity-tracker/metrics-activity.log
             envFrom:
               - secretRef:
                   name: mimir-s3-credentials
