@@ -10,13 +10,7 @@ spec:
     name: loki
   interval: 1h
   values:
-    deploymentMode: SingleBinary
-    global:
-      extraArgs:
-        - "-config.expand-env=true"
-      extraEnvFrom:
-        - secretRef:
-            name: loki-tigris-credentials
+    deploymentMode: SimpleScalable
     loki:
       commonConfig:
         replication_factor: 1
@@ -52,35 +46,27 @@ spec:
     minio:
       enabled: false
     singleBinary:
-      replicas: 1
+      replicas: 0
+    write:
+      replicas: 2
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: loki-tigris-credentials
+    read:
+      replicas: 2
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
         - secretRef:
             name: loki-tigris-credentials
     backend:
-      replicas: 0
-    read:
-      replicas: 0
-    write:
-      replicas: 0
-    ingester:
-      replicas: 0
-    querier:
-      replicas: 0
-    queryFrontend:
-      replicas: 0
-    queryScheduler:
-      replicas: 0
-    distributor:
-      replicas: 0
-    compactor:
-      replicas: 0
-    indexGateway:
-      replicas: 0
-    bloomCompactor:
-      replicas: 0
-    bloomGateway:
-      replicas: 0
+      replicas: 2
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: loki-tigris-credentials
     serviceMonitor:
       enabled: true
