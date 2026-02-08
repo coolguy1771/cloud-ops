@@ -1,5 +1,5 @@
 ---
-# yaml-language-server: $schema=https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/helmrelease-helm-v2.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -7,198 +7,175 @@ metadata:
 spec:
   chartRef:
     kind: OCIRepository
-    name: mimir-distributed
+    name: mimir
   interval: 1h
   timeout: 10m
   values:
-    global:
-      extraEnvFrom:
-        - secretRef:
-            name: mimir-s3-credentials
-    mimir:
-      structuredConfig:
-        common:
-          storage:
-            backend: s3
-            s3:
-              endpoint: "${S3_ENDPOINT}"
-              access_key_id: "${S3_ACCESS_KEY_ID}"
-              secret_access_key: "${S3_SECRET_ACCESS_KEY}"
-              bucket_name: "${MIMIR_BUCKET}"
-              insecure: false
+    fullnameOverride: mimir
+    controllers:
+      mimir:
+        replicas: 1
+        strategy: RollingUpdate
+        containers:
+          app:
+            image:
+              repository: docker.io/grafana/mimir
+              tag: 3.0.0
+            args:
+              - -target=all
+              - -config.file=/etc/mimir/mimir.yaml
+              - -config.expand-env=true
+            envFrom:
+              - secretRef:
+                  name: mimir-s3-credentials
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ready
+                    port: 8080
+                  initialDelaySeconds: 45
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ready
+                    port: 8080
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: "2"
+                memory: 4Gi
+              limits:
+                memory: 12Gi
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    configMaps:
+      config:
+        data:
+          mimir.yaml: |
+            multitenancy_enabled: true
 
-        multitenancy_enabled: true
+            server:
+              http_listen_port: 8080
+              grpc_server_max_recv_msg_size: 104857600
+              grpc_server_max_send_msg_size: 104857600
 
-        # Blocks storage configuration with prefix
-        blocks_storage:
-          storage_prefix: blocks
+            common:
+              storage:
+                backend: s3
+                s3:
+                  endpoint: "${S3_ENDPOINT}"
+                  access_key_id: "${S3_ACCESS_KEY_ID}"
+                  secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                  bucket_name: "${MIMIR_BUCKET}"
+                  insecure: false
 
-        # Ruler storage configuration with different prefix
-        ruler_storage:
-          storage_prefix: ruler
+            blocks_storage:
+              backend: s3
+              storage_prefix: blocks
+              s3:
+                endpoint: "${S3_ENDPOINT}"
+                access_key_id: "${S3_ACCESS_KEY_ID}"
+                secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                bucket_name: "${MIMIR_BUCKET}"
+                insecure: false
+              tsdb:
+                dir: /data/tsdb
+              bucket_store:
+                sync_dir: /data/tsdb-sync
 
-        # Alertmanager storage configuration with different prefix
-        alertmanager_storage:
-          storage_prefix: alertmanager
+            ruler_storage:
+              backend: s3
+              storage_prefix: ruler
+              s3:
+                endpoint: "${S3_ENDPOINT}"
+                access_key_id: "${S3_ACCESS_KEY_ID}"
+                secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                bucket_name: "${MIMIR_BUCKET}"
+                insecure: false
 
-        # Limits configuration
-        limits:
-          max_global_series_per_user: 1000000
-          max_global_series_per_metric: 100000
-          ingestion_rate: 100000
-          ingestion_burst_size: 200000
-          out_of_order_time_window: 5m
+            alertmanager_storage:
+              backend: s3
+              storage_prefix: alertmanager
+              s3:
+                endpoint: "${S3_ENDPOINT}"
+                access_key_id: "${S3_ACCESS_KEY_ID}"
+                secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                bucket_name: "${MIMIR_BUCKET}"
+                insecure: false
 
-    alertmanager:
-      persistentVolume:
-        enabled: true
-        size: 10Gi
+            alertmanager:
+              data_dir: /data/alertmanager
+              enable_api: true
+              external_url: /alertmanager
+
+            compactor:
+              data_dir: /data/compactor
+              compaction_interval: 30m
+              deletion_delay: 2h
+
+            distributor:
+              ring:
+                kvstore:
+                  store: inmemory
+              ha_tracker:
+                enable_ha_tracker: true
+                kvstore:
+                  store: memberlist
+            ingester:
+              ring:
+                kvstore:
+                  store: inmemory
+                replication_factor: 1
+              min_ready_duration: 0s
+              final_sleep: 0s
+
+            limits:
+              max_global_series_per_user: 1000000
+              max_global_series_per_metric: 100000
+              ingestion_rate: 100000
+              ingestion_burst_size: 200000
+              out_of_order_time_window: 5m
+              accept_ha_samples: true
+
+            ruler:
+              enable_api: true
+              rule_path: /data/ruler
+    persistence:
+      config-file:
+        type: configMap
+        identifier: config
+        globalMounts:
+          - path: /etc/mimir
+            readOnly: true
+      data:
+        type: persistentVolumeClaim
+        size: 80Gi
         storageClass: ssdv2-performance
-      replicas: 2
-      resources:
-        limits:
-          memory: 1.4Gi
-        requests:
-          cpu: 1
-          memory: 1Gi
-      statefulSet:
-        enabled: true
-
-    compactor:
-      persistentVolume:
-        size: 20Gi
-        storageClass: ssdv2-performance
-      resources:
-        limits:
-          memory: 2.1Gi
-        requests:
-          cpu: 1
-          memory: 1.5Gi
-
-    distributor:
-      replicas: 2
-      resources:
-        limits:
-          memory: 5.7Gi
-        requests:
-          cpu: 2
-          memory: 4Gi
-
-    ingester:
-      persistentVolume:
-        size: 50Gi
-        storageClass: ssdv2-performance
-      replicas: 2
-      resources:
-        limits:
-          memory: 12Gi
-        requests:
-          cpu: 3.5
-          memory: 8Gi
-      topologySpreadConstraints: {}
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app.kubernetes.io/component
-                    operator: In
-                    values:
-                      - ingester
-              topologyKey: kubernetes.io/hostname
-      zoneAwareReplication:
-        topologyKey: kubernetes.io/hostname
-
-    admin-cache:
-      enabled: true
-      replicas: 1
-
-    chunks-cache:
-      enabled: true
-      replicas: 1
-
-    index-cache:
-      enabled: true
-      replicas: 1
-
-    metadata-cache:
-      enabled: true
-      replicas: 1
-
-    results-cache:
-      enabled: true
-      replicas: 1
-
-    minio:
-      enabled: false
-
-    overrides_exporter:
-      replicas: 1
-      resources:
-        limits:
-          memory: 128Mi
-        requests:
-          cpu: 100m
-          memory: 128Mi
-
-    querier:
-      replicas: 1
-      resources:
-        limits:
-          memory: 5.6Gi
-        requests:
-          cpu: 2
-          memory: 4Gi
-
-    query_frontend:
-      replicas: 1
-      resources:
-        limits:
-          memory: 2.8Gi
-        requests:
-          cpu: 2
-          memory: 2Gi
-
-    ruler:
-      replicas: 1
-      resources:
-        limits:
-          memory: 2.8Gi
-        requests:
-          cpu: 1
-          memory: 2Gi
-
-    store_gateway:
-      persistentVolume:
-        size: 10Gi
-        storageClass: ssdv2-performance
-      replicas: 2
-      resources:
-        limits:
-          memory: 2.1Gi
-        requests:
-          cpu: 1
-          memory: 1.5Gi
-      topologySpreadConstraints: {}
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app.kubernetes.io/component
-                    operator: In
-                    values:
-                      - store-gateway
-              topologyKey: kubernetes.io/hostname
-      zoneAwareReplication:
-        topologyKey: kubernetes.io/hostname
-
-    gateway:
-      enabled: false
-
-    nginx:
-      enabled: false
-
-    metaMonitoring:
-      serviceMonitor:
-        enabled: true
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
