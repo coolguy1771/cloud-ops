@@ -26,7 +26,7 @@ spec:
     secureJsonData:
       httpHeaderValue1: "${ORG_ID}"
   valuesFrom:
-    - targetPath: datasource.secureJsonData.httpHeaderValue1
+    - targetPath: "secureJsonData.httpHeaderValue1"
       valueFrom:
         secretKeyRef:
           name: grafana-datasource-org
@@ -54,7 +54,7 @@ spec:
     secureJsonData:
       httpHeaderValue1: "${ORG_ID}"
   valuesFrom:
-    - targetPath: datasource.secureJsonData.httpHeaderValue1
+    - targetPath: "secureJsonData.httpHeaderValue1"
       valueFrom:
         secretKeyRef:
           name: grafana-datasource-org
@@ -82,7 +82,7 @@ spec:
     secureJsonData:
       httpHeaderValue1: "${ORG_ID}"
   valuesFrom:
-    - targetPath: datasource.secureJsonData.httpHeaderValue1
+    - targetPath: "secureJsonData.httpHeaderValue1"
       valueFrom:
         secretKeyRef:
           name: grafana-datasource-org
