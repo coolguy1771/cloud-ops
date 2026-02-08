@@ -24,7 +24,7 @@ spec:
       httpHeaderName1: "X-Scope-OrgID"
       implementation: mimir
     secureJsonData:
-      httpHeaderValue1: "${org-id}"
+      httpHeaderValue1: ${org-id}
   valuesFrom:
     - targetPath: datasource.secureJsonData.httpHeaderValue1
       valueFrom:
@@ -52,7 +52,7 @@ spec:
       implementation: mimir
     url: http://mimir.mimir-system.svc.cluster.local:8080
     secureJsonData:
-      httpHeaderValue1: "${org-id}"
+      httpHeaderValue1: ${org-id}
   valuesFrom:
     - targetPath: datasource.secureJsonData.httpHeaderValue1
       valueFrom:
@@ -80,7 +80,7 @@ spec:
     jsonData:
       httpHeaderName1: "X-Scope-OrgID"
     secureJsonData:
-      httpHeaderValue1: "${org-id}"  # Injected via valuesFrom
+      httpHeaderValue1: ${org-id}
   valuesFrom:
     - targetPath: datasource.secureJsonData.httpHeaderValue1
       valueFrom:
