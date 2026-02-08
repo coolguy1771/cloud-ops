@@ -79,6 +79,9 @@ spec:
           mimir.yaml: |
             multitenancy_enabled: true
 
+            activity_tracker:
+              filepath: /data/activity-tracker/metrics-activity.log
+
             server:
               http_listen_port: 8080
               grpc_server_max_recv_msg_size: 104857600
