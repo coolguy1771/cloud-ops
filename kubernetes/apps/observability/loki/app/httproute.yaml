@@ -35,6 +35,31 @@ spec:
           port: 3100
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# /ready without JWT so health checks (e.g. Grafana datasource) can succeed when using external Loki URL.
+# No app: loki label so SecurityPolicy (JWT) does not apply.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: loki-ready
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: loki.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: envoy
+      namespace: network
+      sectionName: https
+  hostnames:
+    - loki.cloud.witl.xyz
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ready
+      backendRefs:
+        - name: loki-read
+          port: 3100
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
 # Query Frontend paths -> read service (requires loki:read). Paths from chart gateway.queryFrontend.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -107,9 +132,6 @@ spec:
         - path:
             type: PathPrefix
             value: /loki/api/v1/patterns
-        - path:
-            type: PathPrefix
-            value: /ready
       backendRefs:
         - name: loki-read
           port: 3100

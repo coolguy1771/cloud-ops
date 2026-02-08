@@ -1,5 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+# Datasources are provisioned by grafana-operator. editable: false causes 403 on save in UI; change config here and apply.
 # See https://grafana.github.io/grafana-operator/docs/examples/datasource/
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
@@ -41,7 +42,7 @@ spec:
     url: http://alertmanager-operated.observability.svc.cluster.local:9093
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
-# Mimir via external HTTPS; forwards logged-in user's OAuth token (mimir:read).
+# Mimir via external HTTPS; forwards logged-in user's OAuth token (mimir:read). Edit this file to change; do not edit in UI.
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
 metadata:
@@ -84,6 +85,7 @@ spec:
     url: https://mimir.cloud.witl.xyz/alertmanager
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+# Loki read path (gateway disabled in HelmRelease). Use internal URL so health check does not hit Envoy JWT (avoids "Jwt issuer is not configured"). Edit this file to change; do not edit in UI (editable: false).
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
 metadata:
@@ -98,4 +100,6 @@ spec:
     uid: loki
     access: proxy
     editable: false
-    url: http://loki-gateway.observability.svc.cluster.local
+    url: https://loki.cloud.witl.xyz
+    jsonData:
+      oauthPassThru: true

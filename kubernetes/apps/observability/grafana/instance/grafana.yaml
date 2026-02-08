@@ -94,6 +94,10 @@ spec:
             runAsGroup: 1000
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
+          volumes:
+            - name: grafana-data
+              persistentVolumeClaim:
+                claimName: grafana-pvc
   httpRoute:
     spec:
       hostnames:
@@ -106,3 +110,11 @@ spec:
             - name: grafana-service
               port: 3000
   disableDefaultSecurityContext: All
+  persistentVolumeClaim:
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: ssdv2-performance
