@@ -165,6 +165,8 @@ spec:
               ingestion_burst_size: 200000
               out_of_order_time_window: 5m
               accept_ha_samples: true
+              # kube-prometheus-stack rule groups can exceed default 20 rules per group
+              ruler_max_rules_per_rule_group: 50
 
             ruler:
               enable_api: true
