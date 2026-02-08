@@ -31,7 +31,7 @@ spec:
             type: PathPrefix
             value: /api/v1/upload/block
       backendRefs:
-        - name: mimir-app
+        - name: mimir
           port: 8080
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
@@ -69,5 +69,5 @@ spec:
             type: PathPrefix
             value: /multitenant_alertmanager
       backendRefs:
-        - name: mimir-app
+        - name: mimir
           port: 8080
