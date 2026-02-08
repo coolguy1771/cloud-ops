@@ -106,6 +106,9 @@ spec:
   targetSelectors:
     - group: gateway.networking.k8s.io
       kind: Gateway
+  # Preserve %2F in paths so Mimir ruler API works
+  path:
+    escapedSlashesAction: KeepUnchanged
   # Client IP detection - adjust numTrustedHops based on proxy chain depth
   clientIPDetection:
     xForwardedFor:
