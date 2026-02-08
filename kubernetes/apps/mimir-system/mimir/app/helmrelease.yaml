@@ -25,7 +25,7 @@ spec:
               - -target=all
               - -config.file=/etc/mimir/mimir.yaml
               - -config.expand-env=true
-              - -activity-tracker.filepath=/data/activity-tracker/metrics-activity.log
+              - -activity-tracker.filepath=
             envFrom:
               - secretRef:
                   name: mimir-s3-credentials
@@ -74,14 +74,14 @@ spec:
         ports:
           http:
             port: 8080
+          memberlist:
+            port: 7946
+            protocol: TCP
     configMaps:
       config:
         data:
           mimir.yaml: |
             multitenancy_enabled: true
-
-            activity_tracker:
-              filepath: /data/activity-tracker/metrics-activity.log
 
             server:
               http_listen_port: 8080
@@ -142,10 +142,14 @@ spec:
               compaction_interval: 30m
               deletion_delay: 2h
 
+            memberlist:
+              join_members:
+                - dnssrv+mimir-app.mimir-system.svc.cluster.local:7946
+
             distributor:
               ring:
                 kvstore:
-                  store: inmemory
+                  store: memberlist
               ha_tracker:
                 enable_ha_tracker: true
                 kvstore:
@@ -153,7 +157,7 @@ spec:
             ingester:
               ring:
                 kvstore:
-                  store: inmemory
+                  store: memberlist
                 replication_factor: 1
 
             limits:
