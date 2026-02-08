@@ -76,3 +76,5 @@ spec:
       enabled: false
     lokiCanary:
       enabled: false
+    chunksCache:
+      enabled: false

@@ -11,6 +11,9 @@ metadata:
     dashboards: "grafana"
 spec:
   config:
+    # provisioning = true; kubernetesDashboards = use k8s from browser
+    feature_toggles:
+      enable: "provisioning,kubernetesDashboards"
     log:
       mode: "console"
     security:
