@@ -16,6 +16,8 @@ spec:
       mimir:
         replicas: 1
         strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
         containers:
           app:
             image:
@@ -25,7 +27,6 @@ spec:
               - -target=all
               - -config.file=/etc/mimir/mimir.yaml
               - -config.expand-env=true
-              - -activity-tracker.filepath=
             envFrom:
               - secretRef:
                   name: mimir-s3-credentials
