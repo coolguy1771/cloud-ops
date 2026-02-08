@@ -68,6 +68,8 @@ spec:
       extraEnvFrom:
         - secretRef:
             name: loki-tigris-credentials
+    gateway:
+      enabled: false
     serviceMonitor:
       enabled: true
     test:
