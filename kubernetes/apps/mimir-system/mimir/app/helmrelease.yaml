@@ -22,7 +22,7 @@ spec:
           app:
             image:
               repository: docker.io/grafana/mimir
-              tag: 3.0.2
+              tag: 3.0.3
             args:
               - -target=all,alertmanager
               - -config.file=/etc/mimir/mimir.yaml
