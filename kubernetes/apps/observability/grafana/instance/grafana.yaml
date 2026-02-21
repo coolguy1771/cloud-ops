@@ -117,4 +117,4 @@ spec:
       resources:
         requests:
           storage: 10Gi
-      storageClassName: ssdv2-performance
+      storageClassName: hcloud-volumes

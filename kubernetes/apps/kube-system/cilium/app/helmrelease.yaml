@@ -1,0 +1,71 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: cilium
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    k8sServiceHost: "localhost"
+    k8sServicePort: "7445"
+    kubeProxyReplacement: true
+    waitForKubeProxy: false
+    rollOutCiliumPods: true
+    policyCIDRMatchMode: "nodes"
+    ipv4:
+      enabled: true
+    ipv6:
+      enabled: false
+    cni:
+      exclusive: true
+      install: true
+    encryption:
+      enabled: false
+      # type: wireguard  # or ipsec
+
+    # Tunnel mode (default). Use routingMode: "native" + tunnelProtocol: "" for direct routing if desired.
+    # tunnelProtocol: "vxlan"
+    routingMode: "native"
+    tunnelProtocol: ""
+    ipam:
+      mode: kubernetes
+    ipv4NativeRoutingCIDR: "10.244.0.0/16"
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
+    securityContext:
+      capabilities:
+        ciliumAgent:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+        cleanCiliumState:
+          - NET_ADMIN
+          - SYS_ADMIN
+          - SYS_RESOURCE
+    hubble:
+      enabled: true
+      relay:
+        enabled: false
+      ui:
+        enabled: false

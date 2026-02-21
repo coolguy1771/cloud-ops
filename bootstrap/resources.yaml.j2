@@ -26,3 +26,20 @@ metadata:
   namespace: network
 stringData:
   CLOUDFLARE_TUNNEL_ID: op://cloud-ops/cloudflare/tunnel_id
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hcloud-ccm
+  namespace: kube-system
+stringData:
+  token: op://cloud-ops/hcloud/HCLOUD_TOKEN
+  network: "op://cloud-ops/hcloud/HCLOUD_NETWORK"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hcloud-csi
+  namespace: kube-system
+stringData:
+  token: op://cloud-ops/hcloud/HCLOUD_TOKEN

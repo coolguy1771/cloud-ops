@@ -181,7 +181,7 @@ spec:
       data:
         type: persistentVolumeClaim
         size: 80Gi
-        storageClass: ssdv2-performance
+        storageClass: hcloud-volumes
         accessMode: ReadWriteOnce
         globalMounts:
           - path: /data

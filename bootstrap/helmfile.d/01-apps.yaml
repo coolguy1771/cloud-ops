@@ -6,6 +6,10 @@ helmDefaults:
   wait: true
   waitForJobs: true
 
+repositories:
+  - name: hcloud
+    url: https://charts.hetzner.cloud
+
 releases:
   - name: cert-manager
     namespace: cert-manager
@@ -39,8 +43,71 @@ releases:
         events:
           - postsync
         showlogs: true
+      - # Apply hcloud ExternalSecret so CCM/CSI can use token
+        command: kubectl
+        args:
+          - apply
+          - -n
+          - kube-system
+          - --server-side
+          - --field-manager=bootstrap
+          - -f
+          - ../../kubernetes/apps/kube-system/hcloud-csi/app/externalsecret.yaml
+        events:
+          - postsync
+        showlogs: true
+      - # Wait for hcloud secret in kube-system (ESO sync)
+        command: bash
+        args:
+          - -c
+          - |
+            for i in $(seq 1 30); do
+              kubectl get secret hcloud -n kube-system &>/dev/null && exit 0
+              sleep 2
+            done
+            echo "Timeout waiting for secret hcloud in kube-system" >&2
+            exit 1
+        events:
+          - postsync
+        showlogs: true
     needs:
       - cert-manager/cert-manager
+
+  - name: cilium
+    namespace: kube-system
+    chart: oci://quay.io/cilium/charts/cilium
+    version: "1.19.1"
+    values:
+      - ./templates/values.yaml.gotmpl
+    needs:
+      - cert-manager/cert-manager
+
+  - name: talos-ccm
+    namespace: kube-system
+    chart: oci://ghcr.io/siderolabs/charts/talos-cloud-controller-manager
+    version: 0.5.4
+    values:
+      - ./templates/values.yaml.gotmpl
+    needs:
+      - cert-manager/cert-manager
+
+  - name: hcloud-ccm
+    namespace: kube-system
+    chart: hcloud/hcloud-cloud-controller-manager
+    version: "1.30.0"
+    values:
+      - ./templates/values.yaml.gotmpl
+    needs:
+      - external-secrets/external-secrets
+
+  - name: hcloud-csi
+    namespace: kube-system
+    chart: hcloud/hcloud-csi
+    version: "2.19.0"
+    values:
+      - ./templates/values.yaml.gotmpl
+    needs:
+      - external-secrets/external-secrets
 
   - name: flux-operator
     namespace: flux-system
