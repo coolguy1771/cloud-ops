@@ -36,10 +36,10 @@ spec:
     routingMode: "native"
     tunnelProtocol: ""
     autoDirectNodeRoutes: true
+    loadBalancer:
+      acceleration: native
     ipam:
       mode: kubernetes
-    k8s:
-      requireIPv6PodCIDR: true
     ipv4NativeRoutingCIDR: "10.244.0.0/16"
     cgroup:
       autoMount:
