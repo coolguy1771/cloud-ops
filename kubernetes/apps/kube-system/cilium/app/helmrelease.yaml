@@ -25,8 +25,8 @@ spec:
     ipv4:
       enabled: true
     ipv6:
-      enabled: true
-    ipv6NativeRoutingCIDR: "fd00:10:244::/48"
+      enabled: false
+    # ipv6NativeRoutingCIDR: "fd00:10:244::/48"
     cni:
       exclusive: true
       install: true
