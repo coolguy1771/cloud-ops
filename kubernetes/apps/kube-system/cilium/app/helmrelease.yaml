@@ -48,6 +48,7 @@ spec:
     iptablesRandomFully: true
     bpf:
       preallocateMaps: true
+      masquerade: true
     resources:
       requests:
         cpu: 100m
