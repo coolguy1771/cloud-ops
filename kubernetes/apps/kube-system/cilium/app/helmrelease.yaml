@@ -1,5 +1,4 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -26,25 +25,55 @@ spec:
     ipv4:
       enabled: true
     ipv6:
-      enabled: false
+      enabled: true
+    ipv6NativeRoutingCIDR: "fd00:10:244::/48"
     cni:
       exclusive: true
       install: true
     encryption:
       enabled: false
-      # type: wireguard  # or ipsec
-
-    # Tunnel mode (default). Use routingMode: "native" + tunnelProtocol: "" for direct routing if desired.
-    # tunnelProtocol: "vxlan"
+      type: ""
     routingMode: "native"
     tunnelProtocol: ""
+    autoDirectNodeRoutes: true
     ipam:
       mode: kubernetes
+    k8s:
+      requireIPv6PodCIDR: true
     ipv4NativeRoutingCIDR: "10.244.0.0/16"
     cgroup:
       autoMount:
         enabled: false
       hostRoot: /sys/fs/cgroup
+    iptablesRandomFully: true
+    bpf:
+      preallocateMaps: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 2
+        memory: 2Gi
+    prometheus:
+      enabled: true
+      port: 9962
+      serviceMonitor:
+        enabled: true
+    operator:
+      replicas: 2
+      prometheus:
+        enabled: true
+        port: 9963
+        serviceMonitor:
+          enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
     securityContext:
       capabilities:
         ciliumAgent:
@@ -67,5 +96,25 @@ spec:
       enabled: true
       relay:
         enabled: false
+        replicas: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        service:
+          type: ClusterIP
       ui:
         enabled: false
+        replicas: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        service:
+          type: ClusterIP
