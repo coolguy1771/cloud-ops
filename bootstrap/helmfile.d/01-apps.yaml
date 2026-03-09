@@ -147,7 +147,7 @@ releases:
   - name: hcloud-csi
     namespace: kube-system
     chart: hcloud/hcloud-csi
-    version: "2.19.0"
+    version: "2.20.0"
     values:
       - ./templates/values.yaml.gotmpl
     needs:
