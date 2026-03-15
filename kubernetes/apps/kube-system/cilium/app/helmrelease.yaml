@@ -60,6 +60,7 @@ spec:
       port: 9962
       serviceMonitor:
         enabled: true
+        trustCRDsExist: true
     operator:
       replicas: 2
       prometheus:
