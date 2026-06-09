@@ -17,6 +17,8 @@ releases:
     version: v1.20.2
     values:
       - ./templates/values.yaml.gotmpl
+    needs:
+      - kube-system/talos-ccm
 
   - name: external-secrets
     namespace: external-secrets
@@ -123,8 +125,6 @@ releases:
     version: "1.19.4"
     values:
       - ./templates/values.yaml.gotmpl
-    needs:
-      - cert-manager/cert-manager
 
   - name: talos-ccm
     namespace: kube-system
@@ -133,7 +133,7 @@ releases:
     values:
       - ./templates/values.yaml.gotmpl
     needs:
-      - cert-manager/cert-manager
+      - kube-system/cilium
 
   - name: hcloud-ccm
     namespace: kube-system

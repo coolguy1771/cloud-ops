@@ -1,0 +1,18 @@
+# Applied to every node in the cluster via the Omni cluster template.
+#
+# Enables the external cloud provider so hcloud-ccm and talos-ccm can manage
+# node lifecycle, load balancers, and routes. Without this flag Kubernetes
+# marks nodes with the legacy cloud-controller taint and they stay unschedulable.
+cluster:
+  externalCloudProvider:
+    enabled: true
+
+  # Tell Talos not to deploy a CNI — Cilium is deployed by Flux instead.
+  network:
+    cni:
+      name: none
+
+machine:
+  kubelet:
+    extraArgs:
+      rotate-server-certificates: true

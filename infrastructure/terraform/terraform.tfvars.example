@@ -1,0 +1,21 @@
+# Copy to terraform.tfvars and fill in values.
+# Never commit terraform.tfvars — it contains secrets.
+
+hcloud_token = "your-hetzner-api-token"
+
+# Hetzner snapshot ID of the Omni Talos image.
+# Steps to get it:
+#   1. Omni portal → Add Machine → Download Installation Media → Hetzner (amd64)
+#   2. Upload via Packer or: hcloud-upload-image --architecture x86 --compression xz <image.raw.xz>
+#   3. Note the resulting snapshot ID and set it here.
+talos_image_id = "123456789"
+
+cluster_name = "cloud-ops"
+
+# Spread control planes across two locations for HA:
+control_plane_locations   = ["fsn1", "nbg1", "fsn1"]
+control_plane_server_type = "cx32"
+
+worker_count       = 2
+worker_server_type = "cx32"
+worker_location    = "fsn1"
