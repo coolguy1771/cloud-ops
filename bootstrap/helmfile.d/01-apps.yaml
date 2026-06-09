@@ -91,31 +91,6 @@ releases:
         events:
           - postsync
         showlogs: true
-      - # Apply flux-operator ExternalSecret (flux-web-duo for OIDC)
-        command: bash
-        args:
-          - -c
-          - |
-            kubectl create namespace flux-system --dry-run=client -o yaml | kubectl apply -f -
-            kubectl apply -n flux-system --server-side --field-manager=bootstrap \
-              -f ../../kubernetes/apps/flux-system/flux-operator/app/externalsecret.yaml
-        events:
-          - postsync
-        showlogs: true
-      - # Wait for flux-web-duo secret in flux-system (ESO sync)
-        command: bash
-        args:
-          - -c
-          - |
-            for i in $(seq 1 30); do
-              kubectl get secret flux-web-duo -n flux-system &>/dev/null && exit 0
-              sleep 2
-            done
-            echo "Timeout waiting for secret flux-web-duo in flux-system" >&2
-            exit 1
-        events:
-          - postsync
-        showlogs: true
     needs:
       - external-secrets/external-secrets
 
