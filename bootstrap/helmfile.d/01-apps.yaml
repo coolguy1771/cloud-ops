@@ -83,10 +83,10 @@ releases:
           - -c
           - |
             for i in $(seq 1 30); do
-              kubectl get secret hcloud -n kube-system &>/dev/null && exit 0
+              kubectl get secret hcloud-csi -n kube-system &>/dev/null && exit 0
               sleep 2
             done
-            echo "Timeout waiting for secret hcloud in kube-system" >&2
+            echo "Timeout waiting for secret hcloud-csi in kube-system" >&2
             exit 1
         events:
           - postsync
