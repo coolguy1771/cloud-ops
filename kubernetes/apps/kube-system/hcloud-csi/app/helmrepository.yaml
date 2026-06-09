@@ -3,7 +3,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: hcloud
+  name: hcloud-csi
 spec:
   interval: 15m
   url: https://charts.hetzner.cloud
