@@ -113,7 +113,7 @@ releases:
   - name: hcloud-ccm
     namespace: kube-system
     chart: hcloud/hcloud-cloud-controller-manager
-    version: "1.32.0"
+    version: "1.33.0"
     values:
       - ./templates/values.yaml.gotmpl
     needs:
