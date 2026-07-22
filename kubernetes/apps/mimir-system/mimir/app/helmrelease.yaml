@@ -167,6 +167,8 @@ spec:
               accept_ha_samples: true
               # kube-prometheus-stack rule groups can exceed default 20 rules per group
               ruler_max_rules_per_rule_group: 50
+              # Default 70 is too low once alloy/home-ops + platform rules share a tenant
+              ruler_max_rule_groups_per_tenant: 200
 
             ruler:
               enable_api: true
