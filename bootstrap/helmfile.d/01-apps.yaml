@@ -23,16 +23,16 @@ releases:
   - name: external-secrets
     namespace: external-secrets
     chart: oci://ghcr.io/external-secrets/charts/external-secrets
-    version: 2.5.0
+    version: 2.8.0
     values:
       - ./templates/values.yaml.gotmpl
     needs:
       - cert-manager/cert-manager
 
-  - name: onepassword
+  - name: onepassword-connect
     namespace: external-secrets
-    chart: oci://ghcr.io/bjw-s-labs/helm/app-template
-    version: 4.6.2
+    chart: oci://ghcr.io/1password/connect
+    version: 2.4.1
     values:
       - ./templates/values.yaml.gotmpl
     hooks:
@@ -44,23 +44,13 @@ releases:
         events:
           - postsync
         showlogs: true
-      - # Apply ExternalSecret Resources
+      - # Apply ClusterSecretStore
         command: kubectl
         args:
           - apply
           - --server-side
           - --field-manager=kustomize-controller
-          - --filename=../../kubernetes/apps/external-secrets/onepassword/app/clustersecretstore.yaml
-        events:
-          - postsync
-        showlogs: true
-      - # Apply 1Password SDK ClusterSecretStore
-        command: kubectl
-        args:
-          - apply
-          - --server-side
-          - --field-manager=kustomize-controller
-          - --filename=../../kubernetes/apps/external-secrets/onepassword/app/clustersecretstore.yaml
+          - --filename=../../kubernetes/apps/external-secrets/onepassword-connect/app/clustersecretstore.yaml
         events:
           - postsync
         showlogs: true

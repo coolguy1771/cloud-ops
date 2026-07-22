@@ -2,11 +2,18 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: onepassword-secret
+  name: onepassword-connect-credentials-secret
   namespace: external-secrets
 stringData:
   1password-credentials.json: op://cloud-ops/1password/OP_CREDENTIALS_JSON
-  token: op://cloud-ops/1password/OP_CONNECT_TOKEN
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: onepassword-connect-vault-secret
+  namespace: external-secrets
+stringData:
+  OP_CONNECT_TOKEN: op://cloud-ops/1password/OP_CONNECT_TOKEN
 ---
 # GitHub App private key for ESO GithubAccessToken generator
 # NOTE: The key-base64 field must contain the base64-encoded PEM key
@@ -26,6 +33,16 @@ metadata:
   namespace: network
 stringData:
   CLOUDFLARE_TUNNEL_ID: op://cloud-ops/cloudflare/tunnel_id
+---
+# Used by Flux postBuild substitute on the database/postgres Kustomization
+# (ObjectStore R2 endpointURL). Same field as tunnel account_tag.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-account-id-secret
+  namespace: database
+stringData:
+  CLOUDFLARE_ACCOUNT_ID: op://cloud-ops/cloudflare/account_tag
 ---
 apiVersion: v1
 kind: Secret
