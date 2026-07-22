@@ -94,7 +94,7 @@ releases:
   - name: talos-ccm
     namespace: kube-system
     chart: oci://ghcr.io/siderolabs/charts/talos-cloud-controller-manager
-    version: 0.5.4
+    version: 0.5.5
     values:
       - ./templates/values.yaml.gotmpl
     needs:
