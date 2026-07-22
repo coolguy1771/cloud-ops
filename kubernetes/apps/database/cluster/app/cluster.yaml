@@ -24,9 +24,10 @@ spec:
       app.kubernetes.io/part-of: database
 
   certificates:
-    serverCASecret: postgres-server-cert
+    # Leaf certs from cert-manager; CA secrets synced to ca.crt/ca.key for Poolers
+    serverCASecret: postgres-server-ca-cnpg
     serverTLSSecret: postgres-server-cert
-    clientCASecret: postgres-client-cert
+    clientCASecret: postgres-client-ca-cnpg
     replicationTLSSecret: postgres-client-cert
 
   storage:
