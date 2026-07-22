@@ -14,7 +14,7 @@ spec:
       namespace: cnpg-system
     - name: cert-manager
       namespace: cert-manager
-    - name: onepassword
+    - name: onepassword-connect
       namespace: external-secrets
   interval: 1h
   path: ./kubernetes/apps/database/cluster/app

@@ -150,8 +150,10 @@ Based on the ExternalSecret resources, create these items in your vault:
 |-----------|--------|
 | `cloudflare` | `CLOUDFLARE_DNS_TOKEN` |
 | `external-dns-aws-roles-anywhere` | `trust_anchor_arn`, `profile_arn`, `role_arn`, `aws_region`, `certificate`, `private_key` |
+| `grafana-datasource-org` | `org-id` (must match tenant `id` in `kubernetes/apps/observability/auth/tenants.yaml`) |
 | `mimir-s3-config` | `s3_endpoint`, `s3_access_key_id`, `s3_secret_access_key`, `mimir_bucket` |
-| `mimir-oidc-config` | `client_id`, `client_secret` |
+| `duo-m2m-1` | `client_id`, `client_secret` (Duo M2M for tenant `1`; replaces `mimir-oidc-config` / `mimir-write-oauth`) |
+| `duo-m2m-1-read` | `client_id`, `client_secret` (optional read-only M2M; scopes `mimir:read`, `loki:read`) |
 | `flux` | `FLUX_GITHUB_APP_PRIVATE_KEY` |
 
 ## Troubleshooting
