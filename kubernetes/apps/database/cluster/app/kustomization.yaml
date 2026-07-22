@@ -1,0 +1,17 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./certificates.yaml
+  - ./rbac-ca-reader.yaml
+  - ./externalsecret.yaml
+  - ./cluster.yaml
+  - ./objectstore.yaml
+  - ./scheduledbackup.yaml
+  - ./pooler-rw.yaml
+  - ./pooler-ro.yaml
+  - ./database-authentik.yaml
+  - ./podmonitor.yaml
+  - ./prometheusrule.yaml
+  - ./grafanadashboard.yaml

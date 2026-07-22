@@ -1,0 +1,133 @@
+---
+# Cert-manager TLS for CloudNativePG (user-provided certificates mode).
+# https://cloudnative-pg.io/docs/1.30/certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: postgres-selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-server-ca
+spec:
+  isCA: true
+  commonName: postgres-server-ca
+  secretName: postgres-server-ca
+  duration: 87600h # 10y
+  renewBefore: 720h # 30d
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  issuerRef:
+    name: postgres-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: postgres-server-ca-issuer
+spec:
+  ca:
+    secretName: postgres-server-ca
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-server-cert
+  labels:
+    cnpg.io/reload: ""
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-server-cert
+spec:
+  secretName: postgres-server-cert
+  duration: 2160h # 90d
+  renewBefore: 360h # 15d
+  usages:
+    - server auth
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  dnsNames:
+    - postgres-rw
+    - postgres-rw.database
+    - postgres-rw.database.svc
+    - postgres-rw.database.svc.cluster.local
+    - postgres-r
+    - postgres-r.database
+    - postgres-r.database.svc
+    - postgres-r.database.svc.cluster.local
+    - postgres-ro
+    - postgres-ro.database
+    - postgres-ro.database.svc
+    - postgres-ro.database.svc.cluster.local
+    - postgres-pooler-rw
+    - postgres-pooler-rw.database
+    - postgres-pooler-rw.database.svc
+    - postgres-pooler-rw.database.svc.cluster.local
+    - postgres-pooler-ro
+    - postgres-pooler-ro.database
+    - postgres-pooler-ro.database.svc
+    - postgres-pooler-ro.database.svc.cluster.local
+  issuerRef:
+    name: postgres-server-ca-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-client-ca
+spec:
+  isCA: true
+  commonName: postgres-client-ca
+  secretName: postgres-client-ca
+  duration: 87600h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  issuerRef:
+    name: postgres-selfsigned-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: postgres-client-ca-issuer
+spec:
+  ca:
+    secretName: postgres-client-ca
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-client-cert
+  labels:
+    cnpg.io/reload: ""
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres-client-cert
+spec:
+  secretName: postgres-client-cert
+  duration: 2160h
+  renewBefore: 360h
+  usages:
+    - client auth
+  commonName: streaming_replica
+  privateKey:
+    algorithm: ECDSA
+    size: 384
+  issuerRef:
+    name: postgres-client-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

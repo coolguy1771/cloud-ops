@@ -1,0 +1,77 @@
+---
+# Official CNPG default alerts (PrometheusRule CRD).
+# https://cloudnative-pg.io/docs/1.30/monitoring/
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: postgres-cnpg
+  labels:
+    app.kubernetes.io/name: postgres
+spec:
+  groups:
+    - name: cnpg-default.rules
+      rules:
+        - alert: CNPGLongRunningTransaction
+          annotations:
+            description: Pod {{ $labels.pod }} has a query running longer than 5 minutes.
+            summary: Long-running PostgreSQL transaction
+          expr: cnpg_backends_max_tx_duration_seconds{namespace="database",cluster="postgres"} > 300
+          for: 1m
+          labels:
+            severity: warning
+        - alert: CNPGBackendsWaiting
+          annotations:
+            description: Pod {{ $labels.pod }} has backends waiting longer than 5 minutes.
+            summary: PostgreSQL backends waiting
+          expr: cnpg_backends_waiting_total{namespace="database",cluster="postgres"} > 300
+          for: 1m
+          labels:
+            severity: warning
+        - alert: CNPGDatabaseXidAge
+          annotations:
+            description: Transaction ID age on {{ $labels.pod }} exceeds 300M (wraparound risk).
+            summary: High PostgreSQL XID age
+          expr: cnpg_pg_database_xid_age{namespace="database",cluster="postgres"} > 300000000
+          for: 1m
+          labels:
+            severity: warning
+        - alert: CNPGReplicationLag
+          annotations:
+            description: Standby {{ $labels.pod }} lag exceeds 5 minutes.
+            summary: PostgreSQL replication lag
+          expr: cnpg_pg_replication_lag{namespace="database",cluster="postgres"} > 300
+          for: 1m
+          labels:
+            severity: warning
+        - alert: CNPGArchiveFailed
+          annotations:
+            description: WAL archiving failed on {{ $labels.pod }}.
+            summary: PostgreSQL WAL archive failure
+          expr: (cnpg_pg_stat_archiver_last_failed_time{namespace="database",cluster="postgres"} - cnpg_pg_stat_archiver_last_archived_time{namespace="database",cluster="postgres"}) > 1
+          for: 1m
+          labels:
+            severity: warning
+        - alert: CNPGDeadlocks
+          annotations:
+            description: Deadlock count on {{ $labels.pod }} exceeds 10.
+            summary: PostgreSQL deadlocks
+          expr: cnpg_pg_stat_database_deadlocks{namespace="database",cluster="postgres"} > 10
+          for: 1m
+          labels:
+            severity: warning
+        - alert: CNPGReplicaFailingReplication
+          annotations:
+            description: Replica {{ $labels.pod }} is failing to replicate.
+            summary: PostgreSQL replica replication failure
+          expr: cnpg_pg_replication_in_recovery{namespace="database",cluster="postgres"} > cnpg_pg_replication_is_wal_receiver_up{namespace="database",cluster="postgres"}
+          for: 1m
+          labels:
+            severity: critical
+        - alert: CNPGInstanceNotReady
+          annotations:
+            description: CloudNativePG instance {{ $labels.pod }} is not ready.
+            summary: PostgreSQL instance not ready
+          expr: cnpg_collector_up{namespace="database",cluster="postgres"} == 0
+          for: 5m
+          labels:
+            severity: critical

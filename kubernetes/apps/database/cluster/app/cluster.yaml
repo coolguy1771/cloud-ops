@@ -1,0 +1,105 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/postgresql.cnpg.io/cluster_v1.json
+# Shared platform Postgres. Authentik is the first Database; add more via Database CRs.
+# TLS: cert-manager user-provided certs — https://cloudnative-pg.io/docs/1.30/certificates
+# Restore: https://cloudnative-pg.io/docs/1.30/recovery/
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+spec:
+  instances: 3
+  enableSuperuserAccess: false
+  primaryUpdateStrategy: unsupervised
+  primaryUpdateMethod: switchover
+  logLevel: info
+  enablePDB: true
+  smartShutdownTimeout: 180
+  stopDelay: 1800
+  startDelay: 3600
+
+  inheritedMetadata:
+    labels:
+      app.kubernetes.io/name: postgres
+      app.kubernetes.io/part-of: database
+
+  certificates:
+    serverCASecret: postgres-server-cert
+    serverTLSSecret: postgres-server-cert
+    clientCASecret: postgres-client-cert
+    replicationTLSSecret: postgres-client-cert
+
+  storage:
+    size: 20Gi
+    storageClass: hcloud-volumes
+  walStorage:
+    size: 8Gi
+    storageClass: hcloud-volumes
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 2Gi
+    limits:
+      memory: 4Gi
+
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "512MB"
+      effective_cache_size: "1536MB"
+      maintenance_work_mem: "128MB"
+      checkpoint_completion_target: "0.9"
+      wal_buffers: "16MB"
+      default_statistics_target: "100"
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      work_mem: "4MB"
+      huge_pages: "off"
+      # Authentik requires TLS 1.3 (or EMS) for Postgres TLS
+      ssl_min_protocol_version: "TLSv1.3"
+      ssl_max_protocol_version: "TLSv1.3"
+    pg_hba:
+      # Operator still injects streaming_replica / local rules
+      - hostssl all all all scram-sha-256
+
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+      dataChecksums: true
+      encoding: UTF8
+      localeCType: C
+      localeCollate: C
+
+  managed:
+    roles:
+      - name: authentik
+        ensure: present
+        login: true
+        passwordSecret:
+          name: authentik-db
+
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: postgres-backup
+
+  # PodMonitor managed in podmonitor.yaml; scraped by Alloy prometheus.operator.podmonitors
+  monitoring:
+    disableDefaultQueries: false
+    enablePodMonitor: false
+
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: preferred
+
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          cnpg.io/cluster: postgres
