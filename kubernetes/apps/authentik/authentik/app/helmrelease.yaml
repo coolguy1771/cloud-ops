@@ -1,0 +1,104 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# External CNPG + poolers; chart Postgres stays disabled (default).
+# https://docs.goauthentik.io/install-config/install/kubernetes
+# https://docs.goauthentik.io/install-config/high-availability/
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: authentik
+spec:
+  chart:
+    spec:
+      chart: authentik
+      version: "2026.5.5"
+      sourceRef:
+        kind: HelmRepository
+        name: authentik
+  interval: 1h
+  timeout: 15m
+  values:
+    # existingSecret ignores authentik.* secret values; use AUTHENTIK_* in that Secret + global.env.
+    authentik:
+      existingSecret:
+        secretName: authentik-secrets
+      error_reporting:
+        enabled: false
+    global:
+      volumes:
+        - name: postgres-ca
+          secret:
+            secretName: postgres-ca
+      volumeMounts:
+        - name: postgres-ca
+          mountPath: /etc/ssl/certs/postgres-ca.crt
+          subPath: ca.crt
+          readOnly: true
+      env:
+        - name: AUTHENTIK_POSTGRESQL__HOST
+          value: postgres-pooler-rw.database.svc.cluster.local
+        - name: AUTHENTIK_POSTGRESQL__PORT
+          value: "5432"
+        - name: AUTHENTIK_POSTGRESQL__NAME
+          value: authentik
+        - name: AUTHENTIK_POSTGRESQL__USER
+          value: authentik
+        - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
+          value: "true"
+        - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
+          value: "0"
+        - name: AUTHENTIK_POSTGRESQL__SSLMODE
+          value: verify-full
+        # file:/// required on 2026.5+ for SSLROOTCERT paths
+        - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
+          value: file:///etc/ssl/certs/postgres-ca.crt
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
+          value: postgres-pooler-ro.database.svc.cluster.local
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PORT
+          value: "5432"
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
+          value: authentik
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
+          value: authentik
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: authentik-secrets
+              key: AUTHENTIK_POSTGRESQL__PASSWORD
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__SSLMODE
+          value: verify-full
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__SSLROOTCERT
+          value: file:///etc/ssl/certs/postgres-ca.crt
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__DISABLE_SERVER_SIDE_CURSORS
+          value: "true"
+        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_MAX_AGE
+          value: "0"
+    server:
+      replicas: 2
+      pdb:
+        enabled: true
+        minAvailable: 1
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+      route:
+        main:
+          enabled: true
+          annotations:
+            external-dns.alpha.kubernetes.io/hostname: auth.cloud.witl.xyz
+          hostnames:
+            - auth.cloud.witl.xyz
+          parentRefs:
+            - name: envoy
+              namespace: network
+              sectionName: https
+    worker:
+      replicas: 2
+      pdb:
+        enabled: true
+        minAvailable: 1
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
