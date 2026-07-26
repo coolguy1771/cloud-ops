@@ -133,7 +133,7 @@ spec:
             alertmanager:
               data_dir: /data/alertmanager
               enable_api: true
-              external_url: /alertmanager
+              external_url: https://mimir.cloud.witl.xyz/alertmanager
 
             compactor:
               data_dir: /data/compactor
