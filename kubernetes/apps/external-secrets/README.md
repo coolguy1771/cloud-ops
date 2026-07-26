@@ -4,14 +4,14 @@ Synchronize secrets from external secret management systems into Kubernetes.
 
 ## Overview
 
-External Secrets Operator (ESO) syncs secrets from 1Password (via SDK) into Kubernetes Secrets. This enables GitOps-friendly secret management without storing secrets in Git.
+External Secrets Operator (ESO) syncs secrets from 1Password Connect into Kubernetes Secrets. This enables GitOps-friendly secret management without storing secrets in Git.
 
 ## Architecture
 
 ```
 1Password Vault
     |
-1Password SDK (via Service Account)
+1Password Connect (API + Sync)
     |
 External Secrets Operator
     |
@@ -28,56 +28,46 @@ Core operator that watches ExternalSecret resources and syncs them.
 - Automatic secret refresh (default: 1h)
 - Multiple secret backend support
 - Template engine for secret transformation
-- Prometheus metrics
+- Prometheus metrics and Grafana dashboard
 - Client-side caching
 
-### onepassword (SDK)
+### onepassword-connect
 
-Uses 1Password SDK with a Service Account for direct API access. No Connect Server required.
+Deploys 1Password Connect using the official Helm chart.
 
 **Benefits**:
-- Simpler setup (no server deployment)
-- Direct API access via service account
-- Built-in caching support
+- Supported Connect Server deployment
+- ServiceMonitor for Prometheus
+- Credentials managed via ExternalSecret after bootstrap
 
 ## ClusterSecretStore
 
-The `onepassword` ClusterSecretStore provides cluster-wide access to a 1Password vault.
+The `onepassword-connect` ClusterSecretStore provides cluster-wide access to a 1Password vault.
 
 **Configuration**:
-- Provider: `onepasswordSDK`
-- Auth: Service Account token
-- Cache: 5m TTL, 100 max entries
+- Provider: `onepassword` (Connect)
+- Auth: Connect token from `onepassword-connect-vault-secret`
+- Vault: `cloud-ops`
 
 ## Setup
 
-### 1. Create a 1Password Service Account
+### 1. Create 1Password Connect Credentials
 
-1. In 1Password, go to **Developer** > **Service Accounts**
-2. Create a new Service Account
-3. Grant access to your vault (e.g., "Kubernetes")
-4. Copy the service account token (starts with `ops_`)
+Create a 1Password item named `1password` in the `cloud-ops` vault with:
 
-### 2. Create the Secret
+| Field | Description |
+|-------|-------------|
+| `OP_CREDENTIALS_JSON` | Base64-encoded Connect credentials JSON |
+| `OP_CONNECT_TOKEN` | Connect server access token |
 
-```bash
-kubectl create secret generic onepassword-service-account \
-  --from-literal=token=ops_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx \
-  -n external-secrets
-```
+### 2. Bootstrap Secrets
 
-### 3. Update Vault Name
+During cluster bootstrap, credentials are injected via 1Password CLI into:
 
-Edit `onepassword/app/clustersecretstore.yaml` to set your vault name:
+- `onepassword-connect-credentials-secret`
+- `onepassword-connect-vault-secret`
 
-```yaml
-spec:
-  provider:
-    onepasswordSDK:
-      vault: YourVaultName
-```
-
-### 4. Organize Secrets in 1Password
+### 3. Organize Secrets in 1Password
 
 Create items in your vault with fields that match your ExternalSecret references.
 
@@ -88,7 +78,7 @@ Create items in your vault with fields that match your ExternalSecret references
 
 ## Using ExternalSecrets
 
-The SDK uses the format `<item>/<field>` for secret references.
+Use `dataFrom.extract` with templates for Connect-backed secrets.
 
 ### Basic Example
 
@@ -100,14 +90,15 @@ metadata:
 spec:
   secretStoreRef:
     kind: ClusterSecretStore
-    name: onepassword
+    name: onepassword-connect
   target:
     name: my-kubernetes-secret
-    creationPolicy: Owner
-  data:
-    - secretKey: API_KEY
-      remoteRef:
-        key: my-item/api_key
+    template:
+      data:
+        API_KEY: "{{ .API_KEY }}"
+  dataFrom:
+    - extract:
+        key: my-item
 ```
 
 ### With Template
@@ -120,26 +111,16 @@ metadata:
 spec:
   secretStoreRef:
     kind: ClusterSecretStore
-    name: onepassword
+    name: onepassword-connect
   target:
     name: database-url
     template:
       engineVersion: v2
       data:
         DATABASE_URL: "postgresql://{{ .username }}:{{ .password }}@{{ .host }}/{{ .database }}"
-  data:
-    - secretKey: username
-      remoteRef:
-        key: postgres/username
-    - secretKey: password
-      remoteRef:
-        key: postgres/password
-    - secretKey: host
-      remoteRef:
-        key: postgres/host
-    - secretKey: database
-      remoteRef:
-        key: postgres/database
+  dataFrom:
+    - extract:
+        key: postgres
 ```
 
 ## Required 1Password Items
@@ -150,8 +131,8 @@ Based on the ExternalSecret resources, create these items in your vault:
 |-----------|--------|
 | `cloudflare` | `CLOUDFLARE_DNS_TOKEN` |
 | `external-dns-aws-roles-anywhere` | `trust_anchor_arn`, `profile_arn`, `role_arn`, `aws_region`, `certificate`, `private_key` |
-| `grafana-datasource-org` | `org-id` (must match tenant `id` in `kubernetes/apps/observability/auth/tenants.yaml`) |
-| `mimir-s3-config` | `s3_endpoint`, `s3_access_key_id`, `s3_secret_access_key`, `mimir_bucket` |
+| `grafana-datasource-org` | `org-id` (Duo M2M Client ID UUID used as `X-Scope-OrgID`) |
+| `mimir` | `s3_endpoint`, `s3_access_key_id`, `s3_secret_access_key`, `mimir_bucket` |
 | `duo-m2m-1` | `client_id`, `client_secret` (Duo M2M for tenant `1`; replaces `mimir-oidc-config` / `mimir-write-oauth`) |
 | `duo-m2m-1-read` | `client_id`, `client_secret` (optional read-only M2M; scopes `mimir:read`, `loki:read`) |
 | `flux` | `FLUX_GITHUB_APP_PRIVATE_KEY` |
@@ -169,7 +150,7 @@ kubectl describe externalsecret <name> -n <namespace>
 
 ```bash
 kubectl get clustersecretstore
-kubectl describe clustersecretstore onepassword
+kubectl describe clustersecretstore onepassword-connect
 ```
 
 ### View Operator Logs
@@ -180,15 +161,16 @@ kubectl logs -n external-secrets -l app.kubernetes.io/name=external-secrets
 
 ### Common Issues
 
-**"found multiple labels with the same key"**
-- Ensure each field in your 1Password item has a unique label name
-
 **Secret not syncing**
-- Verify the item/field path matches exactly (case-sensitive)
-- Check service account has access to the vault
+- Verify the item name matches exactly (case-sensitive)
+- Check Connect token has access to the vault
+
+**Connect credentials invalid**
+- Ensure `OP_CREDENTIALS_JSON` is base64-encoded in 1Password
+- The credentials ExternalSecret uses `b64dec` in its template
 
 ## References
 
 - [External Secrets Operator](https://external-secrets.io/)
-- [1Password SDK Provider](https://external-secrets.io/latest/provider/1password-sdk/)
-- [1Password Service Accounts](https://developer.1password.com/docs/service-accounts/)
+- [1Password Connect Provider](https://external-secrets.io/latest/provider/1password/)
+- [1Password Connect Helm Chart](https://github.com/1Password/connect-helm-charts)

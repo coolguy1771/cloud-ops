@@ -20,6 +20,11 @@ releases:
     chart: oci://ghcr.io/home-operations/charts-mirror/external-dns
     version: 1.21.1
 
+  - name: external-secrets
+    namespace: external-secrets
+    chart: oci://ghcr.io/external-secrets/charts/external-secrets
+    version: 2.5.0
+
   - name: envoy-gateway
     namespace: network
     chart: oci://mirror.gcr.io/envoyproxy/gateway-helm

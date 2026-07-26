@@ -173,6 +173,8 @@ spec:
             ruler:
               enable_api: true
               rule_path: /data/ruler
+              # Monolith: ruler must explicitly target the co-located Alertmanager
+              alertmanager_url: http://127.0.0.1:8080/alertmanager
     persistence:
       config-file:
         type: configMap

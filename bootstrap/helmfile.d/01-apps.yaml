@@ -44,7 +44,7 @@ releases:
         events:
           - postsync
         showlogs: true
-      - # Apply ClusterSecretStore
+      - # Apply 1Password Connect ClusterSecretStore
         command: kubectl
         args:
           - apply
