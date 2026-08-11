@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kuma-control-plane
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  destination:
+    namespace: kuma-system
+    server: "https://kubernetes.default.svc"
+  source:
+    repoURL: https://kumahq.github.io/charts
+    targetRevision: "2.14.3"
+    chart: kuma
+    helm:
+      valueFiles:
+        - $values/kuma-helm-values.yaml
+    values: |
+      # Inline defaults (override via external secrets or cluster config)
+      installation:
+        namespace: kuma-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - Validate=true
