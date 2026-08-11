@@ -1,0 +1,8 @@
+# Kubernetes configs & env files
+.git-kubecfg/
+.env
+*.env.*
+
+# Binaries (downloaded on-the-fly)
+bin/
+kind
