@@ -1,0 +1,73 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# HTTPRoute for Mimir write/ingest paths (requires mimir:write scope)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mimir-write
+  labels:
+    app: mimir-write
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: mimir.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: envoy
+      namespace: network
+      sectionName: https
+  hostnames:
+    - mimir.cloud.witl.xyz
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api/v1/push
+        - path:
+            type: PathPrefix
+            value: /otlp/v1/metrics
+        - path:
+            type: PathPrefix
+            value: /distributor
+        - path:
+            type: PathPrefix
+            value: /api/v1/upload/block
+      backendRefs:
+        - name: mimir
+          port: 8080
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# HTTPRoute for Mimir read/query paths (requires mimir:read scope)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: mimir-read
+  labels:
+    app: mimir
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: mimir.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: envoy
+      namespace: network
+      sectionName: https
+  hostnames:
+    - mimir.cloud.witl.xyz
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /prometheus
+        - path:
+            type: PathPrefix
+            value: /api/v1
+        - path:
+            type: PathPrefix
+            value: /ruler
+        - path:
+            type: PathPrefix
+            value: /alertmanager
+        - path:
+            type: PathPrefix
+            value: /multitenant_alertmanager
+      backendRefs:
+        - name: mimir
+          port: 8080

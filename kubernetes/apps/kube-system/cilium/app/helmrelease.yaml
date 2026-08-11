@@ -1,0 +1,120 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: cilium
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    k8sServiceHost: "localhost"
+    k8sServicePort: "7445"
+    kubeProxyReplacement: true
+    waitForKubeProxy: false
+    rollOutCiliumPods: true
+    policyCIDRMatchMode: "nodes"
+    ipv4:
+      enabled: true
+    ipv6:
+      enabled: false
+    # ipv6NativeRoutingCIDR: "fd00:10:244::/48"
+    cni:
+      exclusive: true
+      install: true
+    encryption:
+      enabled: false
+      type: ""
+    routingMode: "tunnel"
+    tunnelProtocol: "vxlan"
+    autoDirectNodeRoutes: false
+    ipam:
+      mode: kubernetes
+    ipv4NativeRoutingCIDR: "10.244.0.0/16"
+    cgroup:
+      autoMount:
+        enabled: false
+      hostRoot: /sys/fs/cgroup
+    iptablesRandomFully: true
+    bpf:
+      preallocateMaps: true
+      masquerade: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 2
+        memory: 2Gi
+    prometheus:
+      enabled: true
+      port: 9962
+      serviceMonitor:
+        enabled: true
+        trustCRDsExist: true
+    operator:
+      replicas: 2
+      prometheus:
+        enabled: true
+        port: 9963
+        serviceMonitor:
+          enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    securityContext:
+      capabilities:
+        ciliumAgent:
+          - CHOWN
+          - KILL
+          - NET_ADMIN
+          - NET_RAW
+          - IPC_LOCK
+          - SYS_ADMIN
+          - SYS_RESOURCE
+          - DAC_OVERRIDE
+          - FOWNER
+          - SETGID
+          - SETUID
+        cleanCiliumState:
+          - NET_ADMIN
+          - SYS_ADMIN
+          - SYS_RESOURCE
+    hubble:
+      enabled: true
+      relay:
+        enabled: false
+        replicas: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        service:
+          type: ClusterIP
+      ui:
+        enabled: false
+        replicas: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+        service:
+          type: ClusterIP

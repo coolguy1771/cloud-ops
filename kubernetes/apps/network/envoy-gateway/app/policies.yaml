@@ -1,0 +1,74 @@
+---
+# Backend Traffic Policy
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: mimir-backend
+spec:
+  compression:
+    - type: Gzip
+  circuitBreaker:
+    maxConnections: 2048
+    maxPendingRequests: 2048
+  loadBalancer:
+    type: LeastRequest
+  timeout:
+    tcp:
+      connectTimeout: 10s
+    http:
+      connectionIdleTimeout: 60s
+      maxConnectionDuration: 3600s
+  retry:
+    numRetries: 3
+    retryOn:
+      httpStatusCodes:
+        - 502
+        - 503
+        - 504
+      triggers:
+        - connect-failure
+        - refused-stream
+        - reset
+    perRetry:
+      timeout: 10s
+      backOff:
+        baseInterval: 100ms
+        maxInterval: 10s
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      matchLabels:
+        app: mimir
+---
+# Client Traffic Policy
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: envoy
+spec:
+  clientIPDetection:
+    xForwardedFor:
+      numTrustedHops: 1
+  connection:
+    bufferLimit: 32Ki
+    connectionLimit:
+      value: 10000
+      closeDelay: 5s
+  timeout:
+    http:
+      requestReceivedTimeout: 60s
+      idleTimeout: 300s
+  http2:
+    onInvalidMessage: TerminateStream
+    initialConnectionWindowSize: 1Mi
+    initialStreamWindowSize: 64Ki
+    maxConcurrentStreams: 100
+  targetSelectors:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+  tls:
+    minVersion: "1.2"
+    maxVersion: "1.3"
+    alpnProtocols:
+      - h2
+      - http/1.1

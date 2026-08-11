@@ -1,0 +1,62 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: onepassword-connect-credentials-secret
+  namespace: external-secrets
+stringData:
+  1password-credentials.json: op://cloud-ops/1password/OP_CREDENTIALS_JSON
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: onepassword-connect-vault-secret
+  namespace: external-secrets
+stringData:
+  OP_CONNECT_TOKEN: op://cloud-ops/1password/OP_CONNECT_TOKEN
+---
+# GitHub App private key for ESO GithubAccessToken generator
+# NOTE: The key-base64 field must contain the base64-encoded PEM key
+# Generate with: op read "op://cloud-ops/github-app/key" | base64 -w0
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-app-pem
+  namespace: external-secrets
+data:
+  key: op://cloud-ops/github-app/key
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-tunnel-id-secret
+  namespace: network
+stringData:
+  CLOUDFLARE_TUNNEL_ID: op://cloud-ops/cloudflare/tunnel_id
+---
+# Used by Flux postBuild substitute on the database/postgres Kustomization
+# (ObjectStore R2 endpointURL). Same field as tunnel account_tag.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloudflare-account-id-secret
+  namespace: database
+stringData:
+  CLOUDFLARE_ACCOUNT_ID: op://cloud-ops/cloudflare/account_tag
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hcloud-ccm
+  namespace: kube-system
+stringData:
+  token: op://cloud-ops/hcloud/HCLOUD_TOKEN
+  network: "op://cloud-ops/hcloud/HCLOUD_NETWORK"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hcloud-csi
+  namespace: kube-system
+stringData:
+  token: op://cloud-ops/hcloud/HCLOUD_TOKEN

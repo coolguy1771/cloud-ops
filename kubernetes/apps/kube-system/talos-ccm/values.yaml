@@ -1,0 +1,16 @@
+# Talos Cloud Controller Manager Helm values.
+# Enables all controllers: cloud-node, cloud-node-lifecycle, node-csr-approval, node-ipam-controller.
+# Chart reference: https://github.com/siderolabs/talos-cloud-controller-manager
+
+# Enable all controllers (cloud-node, cloud-node-lifecycle, node-csr-approval, node-ipam-controller).
+# Alternatively list explicitly: [cloud-node, cloud-node-lifecycle, node-csr-approval, node-ipam-controller]
+enabledControllers:
+  - "*"
+
+# Optional: node-ipam-controller args when using Talos for pod CIDR allocation (e.g. IPv6).
+# Uncomment and set cluster.controllerManager.extraArgs in Talos to disable in-tree node-ipam-controller.
+# extraArgs:
+#   - --allocate-node-cidrs
+#   - --node-cidr-mask-size-ipv4=24
+#   - --node-cidr-mask-size-ipv6=80
+#   - --cidr-allocator-type=CloudAllocator

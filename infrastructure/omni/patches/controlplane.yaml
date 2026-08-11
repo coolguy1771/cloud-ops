@@ -1,0 +1,13 @@
+# Applied to control plane nodes only.
+#
+# kubernetesTalosAPIAccess grants talos-ccm the os:reader role so it can query
+# the Talos API (machine type, region, zone) for node metadata and providerID.
+# Without this the CCM cannot initialize nodes and they stay unschedulable.
+machine:
+  features:
+    kubernetesTalosAPIAccess:
+      enabled: true
+      allowedRoles:
+        - os:reader
+      allowedKubernetesNamespaces:
+        - kube-system

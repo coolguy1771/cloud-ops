@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+# Requires cert-manager. Deploys Barman Cloud CNPG-I plugin (app v0.13.0).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plugin-barman-cloud
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: plugin-barman-cloud
+  interval: 1h
+  values:
+    crds:
+      create: true

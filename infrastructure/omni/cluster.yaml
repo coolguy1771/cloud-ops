@@ -1,0 +1,88 @@
+# Omni cluster template
+#
+# Apply:
+#   omnictl cluster template validate -f infrastructure/omni/cluster.yaml
+#   omnictl cluster template sync -f infrastructure/omni/cluster.yaml --verbose
+#
+# Check status:
+#   omnictl cluster template status -f infrastructure/omni/cluster.yaml
+#
+# Export current state back to file (after UI changes):
+#   omnictl cluster template export -c cloud-ops -o infrastructure/omni/cluster.yaml
+
+kind: Cluster
+name: cloud-ops
+kubernetes:
+  version: v1.36.1
+talos:
+  version: v1.13.2
+patches:
+  - file: patches/all-nodes.yaml
+---
+kind: ControlPlane
+machines:
+  - 8adf4570-dfb0-4892-b221-14d8080ba3b6   # cloud-ops-cp-1 — fsn1
+  - ce58b106-81d4-4423-ae49-8c256303d358   # cloud-ops-cp-2 — nbg1
+  - eb73b186-a2ce-4106-9ecd-91e828d4cb29   # cloud-ops-cp-3 — fsn1
+patches:
+  - file: patches/controlplane.yaml
+---
+kind: Workers
+machines:
+  - 6b5f770d-e36c-4445-b44e-f382158da4c0   # cloud-ops-worker-1
+  - eb10118a-0241-4c36-b849-4c3a482e0276   # cloud-ops-worker-2
+  - c9aa2769-6d05-40f2-89cc-6ebf1e9470ea   # cloud-ops-worker-3
+  - aa4faf48-eb58-42a3-95e8-cf9da981f0e2   # cloud-ops-worker-4
+  - d06b0854-919b-45c0-be00-c2b98dfe6039   # cloud-ops-worker-5
+  - 093a9ee0-f08d-4462-be95-392cd2475b18   # cloud-ops-worker-6
+  - f50fa43d-2481-4d55-9fa2-2d6d9c48fe5c   # cloud-ops-worker-7
+---
+kind: Machine
+name: 8adf4570-dfb0-4892-b221-14d8080ba3b6
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: ce58b106-81d4-4423-ae49-8c256303d358
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: eb73b186-a2ce-4106-9ecd-91e828d4cb29
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: 6b5f770d-e36c-4445-b44e-f382158da4c0
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: eb10118a-0241-4c36-b849-4c3a482e0276
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: c9aa2769-6d05-40f2-89cc-6ebf1e9470ea
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: aa4faf48-eb58-42a3-95e8-cf9da981f0e2
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: d06b0854-919b-45c0-be00-c2b98dfe6039
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: 093a9ee0-f08d-4462-be95-392cd2475b18
+install:
+  disk: /dev/sda
+---
+kind: Machine
+name: f50fa43d-2481-4d55-9fa2-2d6d9c48fe5c
+install:
+  disk: /dev/sda

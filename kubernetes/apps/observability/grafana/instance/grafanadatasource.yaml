@@ -1,0 +1,89 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+# Datasources are provisioned by grafana-operator. editable: false causes 403 on save in UI; change config here and apply.
+# See https://grafana.github.io/grafana-operator/docs/examples/datasource/
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: prometheus
+    name: prometheus
+    uid: prometheus
+    access: proxy
+    isDefault: true
+    url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+    editable: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST
+      httpHeaderName1: "X-Scope-OrgID"
+      implementation: mimir
+    secureJsonData:
+      httpHeaderValue1: "${ORG_ID}"
+  valuesFrom:
+    - targetPath: "secureJsonData.httpHeaderValue1"
+      valueFrom:
+        secretKeyRef:
+          name: grafana-datasource-org
+          key: ORG_ID
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: alertmanager
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: alertmanager
+    name: alertmanager
+    uid: alertmanager
+    access: proxy
+    editable: false
+    jsonData:
+      httpHeaderName1: "X-Scope-OrgID"
+      implementation: mimir
+    url: http://mimir.mimir-system.svc.cluster.local:8080
+    secureJsonData:
+      httpHeaderValue1: "${ORG_ID}"
+  valuesFrom:
+    - targetPath: "secureJsonData.httpHeaderValue1"
+      valueFrom:
+        secretKeyRef:
+          name: grafana-datasource-org
+          key: ORG_ID
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: loki
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: loki
+    name: loki
+    uid: loki
+    access: proxy
+    editable: false
+    url: http://loki-read.observability.svc.cluster.local:3100
+    jsonData:
+      httpHeaderName1: "X-Scope-OrgID"
+    secureJsonData:
+      httpHeaderValue1: "${ORG_ID}"
+  valuesFrom:
+    - targetPath: "secureJsonData.httpHeaderValue1"
+      valueFrom:
+        secretKeyRef:
+          name: grafana-datasource-org
+          key: ORG_ID

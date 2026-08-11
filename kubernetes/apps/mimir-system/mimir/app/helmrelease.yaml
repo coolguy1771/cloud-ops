@@ -1,0 +1,191 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mimir
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: mimir
+  interval: 1h
+  timeout: 10m
+  values:
+    fullnameOverride: mimir
+    controllers:
+      mimir:
+        replicas: 1
+        strategy: Recreate
+        annotations:
+          reloader.stakater.com/auto: "true"
+        containers:
+          app:
+            image:
+              repository: docker.io/grafana/mimir
+              tag: 3.1.4
+            args:
+              - -target=all,alertmanager
+              - -config.file=/etc/mimir/mimir.yaml
+              - -config.expand-env=true
+            envFrom:
+              - secretRef:
+                  name: mimir-s3-credentials
+            probes:
+              liveness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ready
+                    port: 8080
+                  initialDelaySeconds: 45
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ready
+                    port: 8080
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                  timeoutSeconds: 1
+                  failureThreshold: 3
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: false
+              capabilities:
+                drop: ["ALL"]
+            resources:
+              requests:
+                cpu: "2"
+                memory: 4Gi
+              limits:
+                memory: 12Gi
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+          grpc:
+            port: 9095
+            protocol: TCP
+          memberlist:
+            port: 7946
+            protocol: TCP
+    configMaps:
+      config:
+        data:
+          mimir.yaml: |
+            multitenancy_enabled: true
+
+            server:
+              http_listen_port: 8080
+              grpc_server_max_recv_msg_size: 104857600
+              grpc_server_max_send_msg_size: 104857600
+
+            common:
+              storage:
+                backend: s3
+                s3:
+                  endpoint: "${S3_ENDPOINT}"
+                  access_key_id: "${S3_ACCESS_KEY_ID}"
+                  secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                  bucket_name: "${MIMIR_BUCKET}"
+                  insecure: false
+
+            blocks_storage:
+              backend: s3
+              storage_prefix: blocks
+              s3:
+                endpoint: "${S3_ENDPOINT}"
+                access_key_id: "${S3_ACCESS_KEY_ID}"
+                secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                bucket_name: "${MIMIR_BUCKET}"
+                insecure: false
+              tsdb:
+                dir: /data/tsdb
+              bucket_store:
+                sync_dir: /data/tsdb-sync
+
+            ruler_storage:
+              backend: s3
+              storage_prefix: ruler
+              s3:
+                endpoint: "${S3_ENDPOINT}"
+                access_key_id: "${S3_ACCESS_KEY_ID}"
+                secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                bucket_name: "${MIMIR_BUCKET}"
+                insecure: false
+
+            alertmanager_storage:
+              backend: s3
+              storage_prefix: alertmanager
+              s3:
+                endpoint: "${S3_ENDPOINT}"
+                access_key_id: "${S3_ACCESS_KEY_ID}"
+                secret_access_key: "${S3_SECRET_ACCESS_KEY}"
+                bucket_name: "${MIMIR_BUCKET}"
+                insecure: false
+
+            alertmanager:
+              data_dir: /data/alertmanager
+              enable_api: true
+              external_url: https://mimir.cloud.witl.xyz/alertmanager
+
+            compactor:
+              data_dir: /data/compactor
+              compaction_interval: 30m
+              deletion_delay: 2h
+
+            memberlist:
+              join_members:
+                - dnssrv+mimir.mimir-system.svc.cluster.local:7946
+
+            distributor:
+              ring:
+                kvstore:
+                  store: memberlist
+              ha_tracker:
+                enable_ha_tracker: true
+                kvstore:
+                  store: memberlist
+            ingester:
+              ring:
+                kvstore:
+                  store: memberlist
+                replication_factor: 1
+
+            limits:
+              max_global_series_per_user: 1000000
+              max_global_series_per_metric: 100000
+              ingestion_rate: 100000
+              ingestion_burst_size: 200000
+              out_of_order_time_window: 5m
+              accept_ha_samples: true
+              # kube-prometheus-stack rule groups can exceed default 20 rules per group
+              ruler_max_rules_per_rule_group: 50
+              # Default 70 is too low once alloy/home-ops + platform rules share a tenant
+              ruler_max_rule_groups_per_tenant: 200
+
+            ruler:
+              enable_api: true
+              rule_path: /data/ruler
+              # Monolith: ruler must explicitly target the co-located Alertmanager
+              alertmanager_url: http://127.0.0.1:8080/alertmanager
+    persistence:
+      config-file:
+        type: configMap
+        identifier: config
+        globalMounts:
+          - path: /etc/mimir
+            readOnly: true
+      data:
+        type: persistentVolumeClaim
+        size: 80Gi
+        storageClass: hcloud-volumes
+        accessMode: ReadWriteOnce
+        globalMounts:
+          - path: /data
