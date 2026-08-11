@@ -3,12 +3,12 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: kuma
+  name: kuma-control-plane
 spec:
   interval: 30m
   chartRef:
     kind: HelmRepository
-    name: kuma
+    name: kuma-control-plane
   install:
     createNamespace: true
   upgrade:
