@@ -1,0 +1,27 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kuma
+spec:
+  interval: 30m
+  chartRef:
+    kind: HelmRepository
+    name: kuma
+  install:
+    createNamespace: true
+  upgrade:
+    cleanupOnFail: true
+  values:
+    global:
+      dnsServers:
+        - "8.8.8.8"
+        - "1.1.1.1"
+      mtls:
+        enabled: true
+      logging:
+        level: info
+      metrics:
+        prometheus:
+          enabled: true
