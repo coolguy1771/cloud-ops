@@ -5,15 +5,12 @@ kind: BackendTrafficPolicy
 metadata:
   name: envoy-gateway
 spec:
-  # Global compression for all backends (Zstd preferred for efficiency)
   compression:
     - type: Zstd
     - type: Gzip
-  # Conservative circuit breaker to protect backends from overload
   circuitBreaker:
     maxConnections: 1024
     maxPendingRequests: 512
-  # Default retry policy for transient errors only (idempotent-safe)
   retry:
     numRetries: 2
     retryOn:
@@ -21,13 +18,11 @@ spec:
         - gateway-error
         - connect-failure
         - reset
-        - retriable-4xx
     perRetry:
       timeout: 5s
       backOff:
         baseInterval: 50ms
         maxInterval: 2s
-  # Timeout policy — explicit finite timeout (was 0s/disabled before)
   timeout:
     http:
       requestTimeout: 60s
@@ -35,7 +30,6 @@ spec:
       maxConnectionDuration: 3600s
     tcp:
       connectTimeout: 5s
-  # TCP keepalive for backend connections
   tcpKeepalive:
     idleTime: 60s
     interval: 10s
