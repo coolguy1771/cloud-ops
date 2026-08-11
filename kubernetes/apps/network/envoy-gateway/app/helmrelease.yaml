@@ -5,10 +5,17 @@ kind: HelmRelease
 metadata:
   name: envoy-gateway
 spec:
-  chartRef:
-    kind: OCIRepository
-    name: envoy-gateway
-  interval: 1h
+  interval: 30m
+  chart:
+    spec:
+      chart: gateway-helm
+      version: "v1.8.1"
+      sourceRef:
+        kind: OCIRepository
+        name: envoy-gateway
+      interval: 3h
+  install:
+    crds: CreateReplace
   values:
     global:
       imageRegistry: mirror.gcr.io
@@ -16,8 +23,19 @@ spec:
       envoyGateway:
         extensionApis:
           enableBackend: true
+        gateway:
+          replicaCount: 2
+        logging:
+          level: info
         provider:
           type: Kubernetes
           kubernetes:
             deploy:
               type: GatewayNamespace
+            resources:
+              controller:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  memory: 512Mi
