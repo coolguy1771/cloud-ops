@@ -70,9 +70,6 @@ spec:
   infrastructure:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: envoy.cloud.witl.xyz
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "9901"
-      prometheus.io/path: "/stats/prometheus"
   listeners:
     - name: https
       protocol: HTTPS
@@ -85,9 +82,3 @@ spec:
         certificateRefs:
           - kind: Secret
             name: cloud-witl-xyz-tls
-    - name: http
-      protocol: HTTP
-      port: 80
-      allowedRoutes:
-        namespaces:
-          from: All

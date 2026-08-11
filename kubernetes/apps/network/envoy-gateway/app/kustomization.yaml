@@ -8,7 +8,6 @@ resources:
   - ./envoy.yaml
   - ./grafanadashboard.yaml
   - ./helmrelease.yaml
-  - ./httproute-https-redirect.yaml
   - ./namespace.yaml
   - ./observability.yaml
   - ./ocirepository.yaml
