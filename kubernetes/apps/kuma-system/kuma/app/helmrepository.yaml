@@ -3,7 +3,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: kuma
+  name: kuma-control-plane
 spec:
   interval: 1h
   url: https://kumahq.github.io/charts
