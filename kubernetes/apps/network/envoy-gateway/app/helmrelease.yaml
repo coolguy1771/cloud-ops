@@ -1,41 +1,36 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: envoy-gateway
 spec:
   interval: 30m
-  chart:
-    spec:
-      chart: gateway-helm
-      version: "v1.8.1"
-      sourceRef:
-        kind: OCIRepository
-        name: envoy-gateway
-      interval: 3h
+  chartRef:
+    kind: OCIRepository
+    name: envoy-gateway
   install:
     crds: CreateReplace
   values:
     global:
       imageRegistry: mirror.gcr.io
+    deployment:
+      replicas: 2
+      envoyGateway:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
     config:
       envoyGateway:
         extensionApis:
           enableBackend: true
-        gateway:
-          replicaCount: 2
         logging:
-          level: info
+          level:
+            default: info
         provider:
           type: Kubernetes
           kubernetes:
             deploy:
               type: GatewayNamespace
-            resources:
-              controller:
-                requests:
-                  cpu: 100m
-                  memory: 128Mi
-                limits:
-                  memory: 512Mi
