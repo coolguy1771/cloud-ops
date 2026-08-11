@@ -3,4 +3,4 @@ kind: Kustomization
 
 resources:
   - namespace.yaml
-  - kuma/app/ks.yaml
+  - kuma/ks.yaml
