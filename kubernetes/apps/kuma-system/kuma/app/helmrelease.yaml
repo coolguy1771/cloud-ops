@@ -6,9 +6,13 @@ metadata:
   name: kuma-control-plane
 spec:
   interval: 30m
-  chartRef:
-    kind: HelmRepository
-    name: kuma-control-plane
+  chart:
+    spec:
+      chart: kuma
+      version: "2.14.3"
+      sourceRef:
+        kind: HelmRepository
+        name: kuma-control-plane
   install:
     createNamespace: true
   upgrade:
