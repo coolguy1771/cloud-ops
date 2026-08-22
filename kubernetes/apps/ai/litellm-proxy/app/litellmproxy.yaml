@@ -1,0 +1,9 @@
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMProxy
+metadata:
+  name: local
+  namespace: ai
+spec:
+  routerSettings:
+    routing_strategy: simple-shuffle

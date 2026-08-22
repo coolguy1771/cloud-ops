@@ -1,0 +1,14 @@
+---
+apiVersion: litellm.home-operations.com/v1alpha1
+kind: LiteLLMModel
+metadata:
+  name: qwen35-9b-local
+  namespace: ai
+spec:
+  modelName: qwen3.5-9b-local
+  params:
+    model: openai/qwen3.5-9b-local
+    apiBase: http://127.0.0.1:8080/v1
+    apiKey: local
+  info:
+    maxInputTokens: 131072
