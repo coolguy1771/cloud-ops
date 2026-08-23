@@ -27,15 +27,6 @@ spec:
       name: actions-runner-controller
       namespace: actions-runner-system
     template:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                  - key: kubernetes.io/hostname
-                    operator: In
-                    values:
-                      - talos1
       spec:
         containers:
           - name: runner
