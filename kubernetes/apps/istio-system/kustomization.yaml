@@ -6,3 +6,4 @@ resources:
   - ./namespace.yaml
   - ./istio/ks.yaml
   - ./kiali-operator/ks.yaml
+  - ./kiali/ks.yaml
