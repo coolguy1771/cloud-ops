@@ -9,6 +9,13 @@ data:
     metadata:
       name: kiali-oauth
     entries:
+      - model: authentik_core.group
+        id: kiali-access-group
+        state: present
+        identifiers:
+          name: Kiali Access
+        attrs:
+          name: Kiali Access
       - model: authentik_providers_oauth2.oauth2provider
         id: kiali-provider
         state: present
@@ -18,6 +25,7 @@ data:
           name: Kiali
           client_type: confidential
           client_id: kiali
+          client_secret: !Env KIALI_OAUTH_CLIENT_SECRET
           redirect_uris:
             - matching_mode: strict
               url: https://kiali.cloud.witl.xyz/
@@ -38,3 +46,13 @@ data:
           slug: kiali
           policy_engine_mode: any
           provider: !KeyOf kiali-provider
+      - model: authentik_policies.policybinding
+        id: kiali-access-binding
+        state: present
+        identifiers:
+          order: 0
+          target: !KeyOf kiali-app
+        attrs:
+          order: 0
+          target: !KeyOf kiali-app
+          group: !KeyOf kiali-access-group

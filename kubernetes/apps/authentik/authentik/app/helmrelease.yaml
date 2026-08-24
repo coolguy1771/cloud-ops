@@ -77,6 +77,11 @@ spec:
           value: "true"
         - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_MAX_AGE
           value: "0"
+        - name: KIALI_OAUTH_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: kiali-oauth
+              key: client_secret
     server:
       replicas: 2
       pdb:

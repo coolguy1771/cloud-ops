@@ -13,7 +13,10 @@ spec:
       hostname: "kiali.cloud.witl.xyz"
       allowedRoutes:
         namespaces:
-          from: All
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
       tls:
         mode: Terminate
         certificateRefs:
