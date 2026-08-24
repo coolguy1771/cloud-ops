@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: istio-system
 resources:
   - ./namespace.yaml
+  - ./istio/secrets/ks.yaml
   - ./istio/ks.yaml
   - ./kiali-operator/ks.yaml
   - ./kiali/secrets/ks.yaml

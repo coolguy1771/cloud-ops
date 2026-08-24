@@ -34,3 +34,29 @@ variable "hetzner_asn" {
   type        = string
   default     = "24940"
 }
+
+variable "zone_custom_firewall_ruleset_id" {
+  description = <<-EOT
+    Existing zone entry-point ruleset ID for phase http_request_firewall_custom.
+    Cloudflare allows only one; discover via:
+      ./scripts/import-zone-custom-ruleset.sh
+    or GET /zones/$ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint
+  EOT
+  type        = string
+}
+
+variable "zone_custom_firewall_name" {
+  description = "Display name for the zone custom firewall entry-point ruleset"
+  type        = string
+  default     = "default"
+}
+
+variable "zone_custom_firewall_extra_rules" {
+  description = <<-EOT
+    Extra custom security rules already on the zone entry-point ruleset.
+    Import script writes these to existing_custom_rules.auto.tfvars.json so
+    Terraform does not drop dashboard-created rules on apply.
+  EOT
+  type        = list(any)
+  default     = []
+}

@@ -1,0 +1,12 @@
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: mimir
+  namespace: mimir-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mimir
+  mtls:
+    mode: PERMISSIVE

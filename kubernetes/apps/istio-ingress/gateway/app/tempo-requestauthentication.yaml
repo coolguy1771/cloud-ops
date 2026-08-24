@@ -1,0 +1,24 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/requestauthentication_v1.json
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: tempo-jwt
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: istio
+  jwtRules:
+    - issuer: "https://auth.cloud.witl.xyz/application/o/grafana/"
+      jwksUri: "https://auth.cloud.witl.xyz/application/o/grafana/jwks/"
+      outputClaimToHeaders:
+        - header: X-Scope-OrgID
+          claim: tenant_id
+    - issuer: "https://auth.cloud.witl.xyz/application/o/observability-m2m/"
+      jwksUri: "https://auth.cloud.witl.xyz/application/o/observability-m2m/jwks/"
+      spaceDelimitedClaims:
+        - scope
+      outputClaimToHeaders:
+        - header: X-Scope-OrgID
+          claim: tenant_id

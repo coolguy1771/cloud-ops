@@ -1,4 +1,5 @@
 .worktrees/
+.wrangler/
 .DS_Store
 .claude/
 .cursor/

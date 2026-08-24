@@ -1,15 +1,9 @@
-# Copy to terraform.tfvars (gitignored). Prefer: export CLOUDFLARE_API_TOKEN=...
-#
-# Create a token at https://dash.cloudflare.com/profile/api-tokens with:
-#   Zone Resources: Include → cloud.witl.xyz
-#   Permissions:
-#     Zone → Zone → Read
-#     Zone → WAF → Edit
-#     Account → Account Firewall Access Rules → Edit
-# Store as 1Password cloudflare.waf-token (do not reuse dns-token).
-
-# cloudflare_api_token  = "..."  # or CLOUDFLARE_API_TOKEN
 cloudflare_zone_id    = "8674d30d5114d5526b93a694f9bffb57"
 cloudflare_account_id = "d78593257a77725d26d210d4d91ca58a"
+
+# WAF: run ./scripts/import-zone-custom-ruleset.sh before the first plan/apply.
+# The script writes zone_custom_firewall_ruleset_id and
+# existing_custom_rules.auto.tfvars.json (zone_custom_firewall_extra_rules).
+# Do not set zone_custom_firewall_ruleset_id here without that generated file.
 # authentik_host      = "auth.cloud.witl.xyz"
 # hetzner_asn         = "24940"

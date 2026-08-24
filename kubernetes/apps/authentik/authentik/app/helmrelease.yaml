@@ -1,8 +1,5 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
-# External CNPG + poolers; chart Postgres stays disabled (default).
-# https://docs.goauthentik.io/install-config/install/kubernetes
-# https://docs.goauthentik.io/install-config/high-availability/
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -18,15 +15,11 @@ spec:
   interval: 1h
   timeout: 15m
   values:
-    # existingSecret ignores authentik.* secret values; use AUTHENTIK_* in that Secret + global.env.
     authentik:
       existingSecret:
         secretName: authentik-secrets
       error_reporting:
         enabled: false
-    blueprints:
-      configMaps:
-        - authentik-blueprint-kiali
     global:
       volumes:
         - name: postgres-ca
@@ -52,8 +45,6 @@ spec:
           value: "0"
         - name: AUTHENTIK_POSTGRESQL__SSLMODE
           value: verify-full
-        # Plain path: file:// is expanded to PEM by authentik ConfigLoader, but
-        # Django/libpq still needs a filesystem path (goauthentik/authentik#22589).
         - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
           value: /etc/ssl/certs/postgres-ca.crt
         - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST

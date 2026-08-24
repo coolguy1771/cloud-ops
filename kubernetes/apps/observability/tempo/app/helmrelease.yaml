@@ -1,0 +1,79 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tempo
+  interval: 1h
+  values:
+    fullnameOverride: tempo
+    multitenancyEnabled: true
+    traces:
+      otlp:
+        http:
+          enabled: true
+        grpc:
+          enabled: true
+    storage:
+      trace:
+        backend: s3
+        s3:
+          bucket: "${TEMPO_BUCKET_TRACES}"
+          endpoint: "${S3_ENDPOINT}"
+          region: "auto"
+          access_key: "${S3_ACCESS_KEY_ID}"
+          secret_key: "${S3_SECRET_ACCESS_KEY}"
+          forcepathstyle: true
+          insecure: false
+    ingester:
+      replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClass: hcloud-volumes
+      config:
+        replication_factor: 1
+    distributor:
+      replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+    querier:
+      replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+    queryFrontend:
+      replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+    compactor:
+      replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+    memcached:
+      replicas: 1
+    gateway:
+      enabled: false
+    metaMonitoring:
+      serviceMonitor:
+        enabled: true

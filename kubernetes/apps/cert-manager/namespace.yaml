@@ -4,5 +4,6 @@ kind: Namespace
 metadata:
   name: _
   labels:
+    istio.io/dataplane-mode: ambient
     name: cert-manager
     pod-security.kubernetes.io/enforce: privileged

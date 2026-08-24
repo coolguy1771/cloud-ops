@@ -161,19 +161,17 @@ spec:
             limits:
               max_global_series_per_user: 1000000
               max_global_series_per_metric: 100000
+              max_label_names_per_series: 50
               ingestion_rate: 100000
               ingestion_burst_size: 200000
               out_of_order_time_window: 5m
               accept_ha_samples: true
-              # kube-prometheus-stack rule groups can exceed default 20 rules per group
               ruler_max_rules_per_rule_group: 50
-              # Default 70 is too low once alloy/home-ops + platform rules share a tenant
               ruler_max_rule_groups_per_tenant: 200
 
             ruler:
               enable_api: true
               rule_path: /data/ruler
-              # Monolith: ruler must explicitly target the co-located Alertmanager
               alertmanager_url: http://127.0.0.1:8080/alertmanager
     persistence:
       config-file:

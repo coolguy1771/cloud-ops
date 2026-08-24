@@ -1,7 +1,5 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafana_v1beta1.json
-# See https://grafana.github.io/grafana-operator/docs/examples/grafana/
-#
 apiVersion: grafana.integreatly.org/v1beta1
 kind: Grafana
 metadata:
@@ -11,7 +9,6 @@ metadata:
     dashboards: "grafana"
 spec:
   config:
-    # provisioning = true; kubernetesDashboards = use k8s from browser
     feature_toggles:
       enable: "provisioning,kubernetesDashboards"
     log:
@@ -28,25 +25,34 @@ spec:
       feedback_links_enabled: "false"
       reporting_enabled: "false"
     auth:
-      disable_login_form: "false"
+      disable_login_form: "true"
     auth.generic_oauth:
       enabled: "true"
-      name: "Duo SSO"
+      name: "Authentik"
       allow_sign_up: "true"
       allow_insecure_email_lookup: "true"
       client_id: "${GRAFANA_OAUTH_CLIENT_ID}"
       client_secret: "${GRAFANA_OAUTH_CLIENT_SECRET}"
-      scopes: "openid profile email groups"
-      auth_url: "${GRAFANA_OAUTH_ISSUER_URL}/authorize"
-      token_url: "${GRAFANA_OAUTH_ISSUER_URL}/token"
-      api_url: "${GRAFANA_OAUTH_ISSUER_URL}/userinfo"
+      scopes: "openid profile email tenant"
+      auth_url: "https://auth.cloud.witl.xyz/application/o/grafana/authorize/"
+      token_url: "https://auth.cloud.witl.xyz/application/o/token/"
+      api_url: "https://auth.cloud.witl.xyz/application/o/userinfo/"
       name_attribute_path: "name"
       login_attribute_path: "email"
       email_attribute_path: "email"
-      role_attribute_path: "groups"
+      role_attribute_path: "(contains(groups[*], 'Grafana Access') || contains(groups[*], 'Observability Superuser')) && 'Admin' || 'Viewer'"
       skip_org_role_sync: "true"
       use_pkce: "true"
       use_refresh_token: "true"
+    auth.jwt:
+      enabled: "true"
+      header_name: Authorization
+      email_claim: sub
+      username_claim: sub
+      jwk_set_url: "https://auth.cloud.witl.xyz/application/o/grafana-kiali-m2m/jwks/"
+      expect_claims: '{"iss":"https://auth.cloud.witl.xyz/application/o/grafana-kiali-m2m/"}'
+      auto_sign_up: "true"
+      role_attribute_path: "'Viewer'"
     auth.anonymous:
       enabled: "false"
     metrics:
@@ -79,11 +85,6 @@ spec:
                     secretKeyRef:
                       name: grafana-oauth
                       key: client-secret
-                - name: GRAFANA_OAUTH_ISSUER_URL
-                  valueFrom:
-                    secretKeyRef:
-                      name: grafana-oauth
-                      key: issuer-url
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true

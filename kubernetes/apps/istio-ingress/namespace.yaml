@@ -4,6 +4,7 @@ kind: Namespace
 metadata:
   name: istio-ingress
   labels:
+    istio.io/dataplane-mode: ambient
     name: istio-ingress
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/enforce-version: latest

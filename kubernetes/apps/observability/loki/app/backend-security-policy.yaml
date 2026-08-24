@@ -1,6 +1,5 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.envoyproxy.io/securitypolicy_v1alpha1.json
-# JWT auth for Loki backend (ruler + compactor). Ruler: loki:read, compactor delete: loki:write.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -14,27 +13,39 @@ spec:
         app: loki-backend
   jwt:
     providers:
-      - name: duo-m2m
-        issuer: "https://sso-3da0e7d4.sso.duosecurity.com/oauth/DIV21P82KMG9NOTNQW6J"
+      - name: authentik-grafana
+        issuer: "https://auth.cloud.witl.xyz/application/o/grafana/"
         remoteJWKS:
-          uri: "https://sso-3da0e7d4.sso.duosecurity.com/oauth/DIV21P82KMG9NOTNQW6J/jwks"
+          uri: "https://auth.cloud.witl.xyz/application/o/grafana/jwks/"
         claimToHeaders:
-          - claim: sub
+          - claim: tenant_id
+            header: X-Scope-OrgID
+      - name: authentik-observability-m2m
+        issuer: "https://auth.cloud.witl.xyz/application/o/observability-m2m/"
+        remoteJWKS:
+          uri: "https://auth.cloud.witl.xyz/application/o/observability-m2m/jwks/"
+        claimToHeaders:
+          - claim: tenant_id
             header: X-Scope-OrgID
   authorization:
     defaultAction: Deny
     rules:
-      - name: require-read-scope
+      - name: grafana-users-read
         action: Allow
         principal:
           jwt:
-            provider: duo-m2m
+            provider: authentik-grafana
+      - name: m2m-read
+        action: Allow
+        principal:
+          jwt:
+            provider: authentik-observability-m2m
             scopes:
               - loki:read
-      - name: require-write-scope
+      - name: m2m-write
         action: Allow
         principal:
           jwt:
-            provider: duo-m2m
+            provider: authentik-observability-m2m
             scopes:
               - loki:write

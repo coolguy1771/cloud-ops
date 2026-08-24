@@ -1,0 +1,12 @@
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: grafana
+  namespace: observability
+spec:
+  selector:
+    matchLabels:
+      app: grafana
+  mtls:
+    mode: PERMISSIVE

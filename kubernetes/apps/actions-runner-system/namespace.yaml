@@ -4,6 +4,7 @@ kind: Namespace
 metadata:
   name: _
   labels:
+    istio.io/dataplane-mode: ambient
     name: actions-runner-system
     pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/enforce-version: latest
