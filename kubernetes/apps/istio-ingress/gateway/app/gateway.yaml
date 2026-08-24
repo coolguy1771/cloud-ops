@@ -4,11 +4,11 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: istio
-  annotations:
-    # Cloudflare tunnel fronts ingress; no Hetzner LB.
-    networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
+  infrastructure:
+    annotations:
+      load-balancer.hetzner.cloud/network-zone: eu-central
   listeners:
     - name: https
       protocol: HTTPS
