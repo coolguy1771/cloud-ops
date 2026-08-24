@@ -24,6 +24,9 @@ spec:
         secretName: authentik-secrets
       error_reporting:
         enabled: false
+    blueprints:
+      configMaps:
+        - authentik-blueprint-kiali
     global:
       volumes:
         - name: postgres-ca
