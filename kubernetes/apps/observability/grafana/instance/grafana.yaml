@@ -109,7 +109,7 @@ spec:
       parentRefs:
         - name: istio
           namespace: istio-ingress
-          sectionName: https-grafana
+          sectionName: https
       rules:
         - backendRefs:
             - name: grafana-service

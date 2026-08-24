@@ -13,7 +13,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-mimir
+      sectionName: https
   hostnames:
     - mimir.cloud.witl.xyz
   rules:
@@ -48,7 +48,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-mimir
+      sectionName: https
   hostnames:
     - mimir.cloud.witl.xyz
   rules:

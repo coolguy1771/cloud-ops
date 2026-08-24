@@ -13,7 +13,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-loki
+      sectionName: https
   hostnames:
     - loki.cloud.witl.xyz
   rules:
@@ -47,7 +47,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-loki
+      sectionName: https
   hostnames:
     - loki.cloud.witl.xyz
   rules:
@@ -73,7 +73,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-loki
+      sectionName: https
   hostnames:
     - loki.cloud.witl.xyz
   rules:
@@ -150,7 +150,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-loki
+      sectionName: https
   hostnames:
     - loki.cloud.witl.xyz
   rules:

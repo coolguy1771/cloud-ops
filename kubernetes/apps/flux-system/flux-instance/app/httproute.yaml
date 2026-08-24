@@ -13,7 +13,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-flux-webhook
+      sectionName: https
   rules:
     - backendRefs:
         - name: webhook-receiver

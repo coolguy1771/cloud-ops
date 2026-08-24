@@ -10,7 +10,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: https-flux-operator
+      sectionName: https
   rules:
     - backendRefs:
         - name: flux-operator
