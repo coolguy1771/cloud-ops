@@ -90,6 +90,7 @@ spec:
       isWALArchiver: true
       parameters:
         barmanObjectName: postgres-backup
+        serverName: postgres-recovered
 
   # PodMonitor managed in podmonitor.yaml; scraped by Alloy prometheus.operator.podmonitors
   monitoring:
