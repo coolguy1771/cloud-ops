@@ -13,20 +13,20 @@ spec:
         app: mimir-write
   jwt:
     providers:
-      - name: duo-m2m
-        issuer: "https://sso-3da0e7d4.sso.duosecurity.com/oauth/DIV21P82KMG9NOTNQW6J"
+      - name: authentik-observability-m2m
+        issuer: "https://auth.cloud.witl.xyz/application/o/observability-m2m/"
         remoteJWKS:
-          uri: "https://sso-3da0e7d4.sso.duosecurity.com/oauth/DIV21P82KMG9NOTNQW6J/jwks"
+          uri: "https://auth.cloud.witl.xyz/application/o/observability-m2m/jwks/"
         claimToHeaders:
-          - claim: sub
+          - claim: tenant_id
             header: X-Scope-OrgID
   authorization:
     defaultAction: Deny
     rules:
-      - name: require-write-scope
+      - name: m2m-write
         action: Allow
         principal:
           jwt:
-            provider: duo-m2m
+            provider: authentik-observability-m2m
             scopes:
               - mimir:write

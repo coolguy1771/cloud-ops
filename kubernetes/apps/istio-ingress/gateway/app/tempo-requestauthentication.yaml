@@ -10,10 +10,15 @@ spec:
     matchLabels:
       gateway.networking.k8s.io/gateway-name: istio
   jwtRules:
-    - issuer: "https://auth.cloud.witl.xyz/application/o/tempo/"
-      jwksUri: "https://auth.cloud.witl.xyz/application/o/tempo/jwks/"
+    - issuer: "https://auth.cloud.witl.xyz/application/o/grafana/"
+      jwksUri: "https://auth.cloud.witl.xyz/application/o/grafana/jwks/"
+      outputClaimToHeaders:
+        - header: X-Scope-OrgID
+          claim: tenant_id
+    - issuer: "https://auth.cloud.witl.xyz/application/o/observability-m2m/"
+      jwksUri: "https://auth.cloud.witl.xyz/application/o/observability-m2m/jwks/"
       spaceDelimitedClaims:
         - scope
       outputClaimToHeaders:
         - header: X-Scope-OrgID
-          claim: sub
+          claim: tenant_id

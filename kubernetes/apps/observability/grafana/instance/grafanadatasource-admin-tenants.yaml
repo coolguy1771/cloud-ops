@@ -1,0 +1,139 @@
+---
+# Fixed-tenant datasources for Grafana Admins (in-cluster, static X-Scope-OrgID).
+# Default prometheus/loki/tempo use oauthPassThru and the user's JWT tenant_id.
+# Admins pick e.g. "Prometheus (icbplays-net)" in Explore to query another tenant.
+# OSS Grafana cannot hide datasources from Viewers; only grant Admin to superusers.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus-witl-xyz
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: prometheus
+    name: Prometheus (witl-xyz)
+    uid: prometheus-witl-xyz
+    access: proxy
+    editable: false
+    url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST
+      httpHeaderName1: X-Scope-OrgID
+      implementation: mimir
+    secureJsonData:
+      httpHeaderValue1: witl-xyz
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: loki-witl-xyz
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: loki
+    name: Loki (witl-xyz)
+    uid: loki-witl-xyz
+    access: proxy
+    editable: false
+    url: http://loki-read.observability.svc.cluster.local:3100
+    jsonData:
+      httpHeaderName1: X-Scope-OrgID
+    secureJsonData:
+      httpHeaderValue1: witl-xyz
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: tempo-witl-xyz
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: tempo
+    name: Tempo (witl-xyz)
+    uid: tempo-witl-xyz
+    access: proxy
+    editable: false
+    url: http://tempo-query-frontend.observability.svc.cluster.local:3200
+    jsonData:
+      httpHeaderName1: X-Scope-OrgID
+      tracesToLogsV2:
+        datasourceUid: loki-witl-xyz
+      serviceMap:
+        datasourceUid: prometheus-witl-xyz
+    secureJsonData:
+      httpHeaderValue1: witl-xyz
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus-icbplays-net
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: prometheus
+    name: Prometheus (icbplays-net)
+    uid: prometheus-icbplays-net
+    access: proxy
+    editable: false
+    url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST
+      httpHeaderName1: X-Scope-OrgID
+      implementation: mimir
+    secureJsonData:
+      httpHeaderValue1: icbplays-net
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: loki-icbplays-net
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: loki
+    name: Loki (icbplays-net)
+    uid: loki-icbplays-net
+    access: proxy
+    editable: false
+    url: http://loki-read.observability.svc.cluster.local:3100
+    jsonData:
+      httpHeaderName1: X-Scope-OrgID
+    secureJsonData:
+      httpHeaderValue1: icbplays-net
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: tempo-icbplays-net
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: tempo
+    name: Tempo (icbplays-net)
+    uid: tempo-icbplays-net
+    access: proxy
+    editable: false
+    url: http://tempo-query-frontend.observability.svc.cluster.local:3200
+    jsonData:
+      httpHeaderName1: X-Scope-OrgID
+      tracesToLogsV2:
+        datasourceUid: loki-icbplays-net
+      serviceMap:
+        datasourceUid: prometheus-icbplays-net
+    secureJsonData:
+      httpHeaderValue1: icbplays-net

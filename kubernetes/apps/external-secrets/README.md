@@ -131,10 +131,10 @@ Based on the ExternalSecret resources, create these items in your vault:
 |-----------|--------|
 | `cloudflare` | `CLOUDFLARE_DNS_TOKEN` |
 | `external-dns-aws-roles-anywhere` | `trust_anchor_arn`, `profile_arn`, `role_arn`, `aws_region`, `certificate`, `private_key` |
-| `grafana-datasource-org` | `org-id` (Duo M2M Client ID UUID used as `X-Scope-OrgID`) |
+| `grafana-datasource-org` | `org-id` (named tenant for Alloy/istiod/Kiali; `witl-xyz` is shared by the home-ops and cloud-ops clusters) |
+| `observability-m2m` | Platform M2M (`client_id`, `client_secret`); JWT `tenant_id` defaults to `witl-xyz` |
+| `observability-m2m-<tenant>` | Extra tenant M2M (`client_id`, `username`, `password`, `tenant-id`); e.g. `observability-m2m-icbplays-net` for `*.icbplays.net` |
 | `mimir` | `s3_endpoint`, `s3_access_key_id`, `s3_secret_access_key`, `mimir_bucket` |
-| `duo-m2m-1` | `client_id`, `client_secret` (Duo M2M for tenant `1`; replaces `mimir-oidc-config` / `mimir-write-oauth`) |
-| `duo-m2m-1-read` | `client_id`, `client_secret` (optional read-only M2M; scopes `mimir:read`, `loki:read`) |
 | `flux` | `FLUX_GITHUB_APP_PRIVATE_KEY` |
 
 ## Troubleshooting

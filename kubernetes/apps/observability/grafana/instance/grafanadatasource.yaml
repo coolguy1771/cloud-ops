@@ -1,4 +1,6 @@
 ---
+# Default user datasources: external URLs + oauthPassThru (JWT tenant_id -> X-Scope-OrgID).
+# Admins query other tenants via grafanadatasource-admin-tenants.yaml (fixed X-Scope-OrgID).
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
@@ -14,21 +16,13 @@ spec:
     uid: prometheus
     access: proxy
     isDefault: true
-    url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+    url: https://mimir.cloud.witl.xyz/prometheus
     editable: false
     jsonData:
       timeInterval: "15s"
       httpMethod: POST
-      httpHeaderName1: "X-Scope-OrgID"
       implementation: mimir
-    secureJsonData:
-      httpHeaderValue1: "${ORG_ID}"
-  valuesFrom:
-    - targetPath: "secureJsonData.httpHeaderValue1"
-      valueFrom:
-        secretKeyRef:
-          name: grafana-datasource-org
-          key: ORG_ID
+      oauthPassThru: true
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
@@ -46,17 +40,9 @@ spec:
     access: proxy
     editable: false
     jsonData:
-      httpHeaderName1: "X-Scope-OrgID"
       implementation: mimir
-    url: http://mimir.mimir-system.svc.cluster.local:8080
-    secureJsonData:
-      httpHeaderValue1: "${ORG_ID}"
-  valuesFrom:
-    - targetPath: "secureJsonData.httpHeaderValue1"
-      valueFrom:
-        secretKeyRef:
-          name: grafana-datasource-org
-          key: ORG_ID
+      oauthPassThru: true
+    url: https://mimir.cloud.witl.xyz
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
@@ -73,17 +59,9 @@ spec:
     uid: loki
     access: proxy
     editable: false
-    url: http://loki-read.observability.svc.cluster.local:3100
+    url: https://loki.cloud.witl.xyz
     jsonData:
-      httpHeaderName1: "X-Scope-OrgID"
-    secureJsonData:
-      httpHeaderValue1: "${ORG_ID}"
-  valuesFrom:
-    - targetPath: "secureJsonData.httpHeaderValue1"
-      valueFrom:
-        secretKeyRef:
-          name: grafana-datasource-org
-          key: ORG_ID
+      oauthPassThru: true
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
@@ -100,18 +78,10 @@ spec:
     uid: tempo
     access: proxy
     editable: false
-    url: http://tempo-query-frontend.observability.svc.cluster.local:3200
+    url: https://tempo.cloud.witl.xyz
     jsonData:
-      httpHeaderName1: "X-Scope-OrgID"
+      oauthPassThru: true
       tracesToLogsV2:
         datasourceUid: loki
       serviceMap:
         datasourceUid: prometheus
-    secureJsonData:
-      httpHeaderValue1: "${ORG_ID}"
-  valuesFrom:
-    - targetPath: "secureJsonData.httpHeaderValue1"
-      valueFrom:
-        secretKeyRef:
-          name: grafana-datasource-org
-          key: ORG_ID

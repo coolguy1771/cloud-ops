@@ -9,19 +9,30 @@ spec:
   selector:
     matchLabels:
       gateway.networking.k8s.io/gateway-name: istio
-  action: DENY
+  action: ALLOW
   rules:
     - to:
         - operation:
             hosts: ["tempo.cloud.witl.xyz"]
-            paths: ["/v1/traces*"]
+            paths: ["/ready*"]
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/api*"]
       when:
-        - key: request.auth.claims[scope]
-          notValues: ["tempo:write"]
+        - key: request.auth.claims[iss]
+          values: ["https://auth.cloud.witl.xyz/application/o/grafana/"]
     - to:
         - operation:
             hosts: ["tempo.cloud.witl.xyz"]
             paths: ["/api*"]
       when:
         - key: request.auth.claims[scope]
-          notValues: ["tempo:read"]
+          values: ["tempo:read"]
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/v1/traces*"]
+      when:
+        - key: request.auth.claims[scope]
+          values: ["tempo:write"]
