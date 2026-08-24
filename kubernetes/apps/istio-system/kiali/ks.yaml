@@ -21,6 +21,8 @@ spec:
         name: kiali-oauth-client-id
       - kind: Secret
         name: kiali-mimir-org
+      - kind: Secret
+        name: kiali-grafana-oauth-client-id
   prune: true
   sourceRef:
     kind: GitRepository
