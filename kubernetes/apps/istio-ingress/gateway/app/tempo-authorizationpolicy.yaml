@@ -13,10 +13,11 @@ spec:
   rules:
     # Shared istio Gateway also serves Kiali (https listener). Without an explicit
     # ALLOW, ambient mode rejects all other hostnames on this gateway workload.
+    # Include / so https://kiali.cloud.witl.xyz/ (HTTPRoute redirect to /kiali) is allowed.
     - to:
         - operation:
             hosts: ["kiali.cloud.witl.xyz"]
-            paths: ["/kiali*"]
+            paths: ["/", "/*"]
     - to:
         - operation:
             hosts: ["tempo.cloud.witl.xyz"]
