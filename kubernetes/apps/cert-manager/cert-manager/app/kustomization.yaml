@@ -9,4 +9,5 @@ resources:
   - ./grafanadashboard.yaml
   - ./helmrelease.yaml
   - ./ocirepository.yaml
+  - ./peerauthentication.yaml
   - ./prometheusrule.yaml
