@@ -21,7 +21,8 @@ spec:
             limits:
               memory: 2Gi
       envoyService:
-        externalTrafficPolicy: Local
+        type: ClusterIP
+        externalTrafficPolicy: Cluster
   shutdown:
     drainTimeout: 180s
   telemetry:
