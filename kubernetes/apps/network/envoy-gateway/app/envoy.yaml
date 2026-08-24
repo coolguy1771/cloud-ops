@@ -50,7 +50,9 @@ kind: Gateway
 metadata:
   name: envoy
   annotations:
-    external-dns.alpha.kubernetes.io/target:  external.cloud.witl.xyz
+    # DNS for app hostnames is owned by Istio Gateway HTTPRoutes. Do not publish
+    # envoy.cloud.witl.xyz or CNAME apps to the Cloudflare tunnel via this Gateway.
+    external-dns.alpha.kubernetes.io/controller: none
     gatus.home-operations.com/endpoint: |-
       client:
         dns-resolver: tcp://1.1.1.1:53
@@ -58,8 +60,7 @@ metadata:
 spec:
   gatewayClassName: envoy
   infrastructure:
-    annotations:
-      external-dns.alpha.kubernetes.io/hostname: envoy.cloud.witl.xyz
+    annotations: {}
   listeners:
     - name: https
       protocol: HTTPS

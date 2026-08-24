@@ -13,7 +13,7 @@ locals {
 
   authentik_oidc_skip_rule = {
     ref         = "skip_authentik_oidc_endpoints"
-    description = "Skip WAF/SBFM/ratelimit for Authentik OIDC endpoints"
+    description = "Skip WAF/SBFM/ratelimit only for machine OIDC token/JWKS paths (not login UI or /authorize)"
     enabled     = true
     action      = "skip"
     expression  = <<-EOT
@@ -21,6 +21,7 @@ locals {
         ends_with(http.request.uri.path, "/.well-known/openid-configuration") or
         starts_with(http.request.uri.path, "/application/o/token") or
         starts_with(http.request.uri.path, "/application/o/userinfo") or
+        starts_with(http.request.uri.path, "/application/o/introspect") or
         ends_with(http.request.uri.path, "/jwks/") or
         http.request.uri.path contains "/jwks/"
       ))

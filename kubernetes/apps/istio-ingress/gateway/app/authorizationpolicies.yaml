@@ -1,12 +1,11 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1.json
-# ALLOW-only on the shared Istio Gateway: every hostname/path must be listed.
-# App-level OIDC (Authentik, Grafana, Kiali) has no JWT gate here.
-# Loki/Mimir/Tempo require Authentik JWTs (Grafana user or observability-m2m).
+# Per-host ALLOW policies on the shared Gateway.
+# Istio 1.30 cannot targetRefs HTTPRoute yet (istio/istio#59328); host/path rules
+# mirror HTTPRoute scope until that lands — then move each policy beside its route.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
-  name: gateway-jwt-required
+  name: gateway-allow-ui
   namespace: istio-ingress
 spec:
   targetRefs:
@@ -15,7 +14,6 @@ spec:
       name: istio
   action: ALLOW
   rules:
-    # --- UI / IdP / Flux (no gateway JWT) ---
     - to:
         - operation:
             hosts: ["kiali.cloud.witl.xyz"]
@@ -36,8 +34,19 @@ spec:
         - operation:
             hosts: ["flux-webhook.cloud.witl.xyz"]
             paths: ["/hook/*"]
-
-    # --- Tempo ---
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-allow-tempo
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  action: ALLOW
+  rules:
     - to:
         - operation:
             hosts: ["tempo.cloud.witl.xyz"]
@@ -63,8 +72,19 @@ spec:
       when:
         - key: request.auth.claims[scope]
           values: ["tempo:write"]
-
-    # --- Loki ---
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-allow-loki
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  action: ALLOW
+  rules:
     - to:
         - operation:
             hosts: ["loki.cloud.witl.xyz"]
@@ -129,8 +149,19 @@ spec:
       when:
         - key: request.auth.claims[scope]
           values: ["loki:read"]
-
-    # --- Mimir (avoid /api/v1* so push is not readable with mimir:read alone) ---
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-allow-mimir
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  action: ALLOW
+  rules:
     - to:
         - operation:
             hosts: ["mimir.cloud.witl.xyz"]
