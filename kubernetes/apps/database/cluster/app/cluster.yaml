@@ -66,13 +66,16 @@ spec:
       - hostssl all all all scram-sha-256
 
   bootstrap:
-    initdb:
-      database: app
-      owner: app
-      dataChecksums: true
-      encoding: UTF8
-      localeCType: C
-      localeCollate: C
+    recovery:
+      source: postgres-backup-source
+
+  externalClusters:
+    - name: postgres-backup-source
+      plugin:
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: postgres-backup
+          serverName: postgres
 
   managed:
     roles:
@@ -102,6 +105,16 @@ spec:
     - maxSkew: 1
       topologyKey: kubernetes.io/hostname
       whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          cnpg.io/cluster: postgres
+    # Hard spread across Hetzner regions (fsn1/nbg1/hel1, one per instance) —
+    # labels set by hcloud-ccm. DoNotSchedule: with instances == regions this
+    # should always be satisfiable; if a region briefly lacks capacity a
+    # rescheduled instance can go Pending until it's available again.
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/region
+      whenUnsatisfiable: DoNotSchedule
       labelSelector:
         matchLabels:
           cnpg.io/cluster: postgres
