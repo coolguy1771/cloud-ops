@@ -9,5 +9,6 @@ resources:
   - ./cni-ocirepository.yaml
   - ./istiod-helmrelease.yaml
   - ./istiod-ocirepository.yaml
+  - ./peerauthentication.yaml
   - ./ztunnel-helmrelease.yaml
   - ./ztunnel-ocirepository.yaml
