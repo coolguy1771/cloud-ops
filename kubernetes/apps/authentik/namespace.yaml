@@ -5,6 +5,7 @@ metadata:
   name: _
   labels:
     istio.io/dataplane-mode: ambient
+    istio.io/use-waypoint: waypoint
     name: authentik
     pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: baseline

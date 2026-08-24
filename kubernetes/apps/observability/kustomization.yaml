@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: observability
 resources:
   - ./namespace.yaml
+  - ./waypoint.yaml
   - ./grafana/ks.yaml
   - ./loki/app
   - ./tempo/app
