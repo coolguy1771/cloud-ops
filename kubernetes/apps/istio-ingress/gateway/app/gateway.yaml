@@ -4,8 +4,6 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: istio
-  annotations:
-    external-dns.alpha.kubernetes.io/hostname: kiali.cloud.witl.xyz
 spec:
   gatewayClassName: istio
   listeners:
