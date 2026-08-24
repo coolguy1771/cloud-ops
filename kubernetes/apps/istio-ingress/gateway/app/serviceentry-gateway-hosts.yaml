@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/networking.istio.io/serviceentry_v1.json
+# Register public Gateway hostnames in the mesh registry so Kiali KIA0104
+# ("host has no matching entry in the service registry") is not raised against
+# gateway-jwt-required AuthorizationPolicy Host matches. Not used for routing.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: gateway-public-hosts
+  namespace: istio-ingress
+spec:
+  hosts:
+    - auth.cloud.witl.xyz
+    - flux-operator.cloud.witl.xyz
+    - flux-webhook.cloud.witl.xyz
+    - grafana.cloud.witl.xyz
+    - kiali.cloud.witl.xyz
+    - loki.cloud.witl.xyz
+    - mimir.cloud.witl.xyz
+    - tempo.cloud.witl.xyz
+  location: MESH_EXTERNAL
+  ports:
+    - name: https
+      number: 443
+      protocol: HTTPS
+  resolution: NONE

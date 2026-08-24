@@ -6,3 +6,4 @@ resources:
   - ./gateway.yaml
   - ./gateway-authorizationpolicy.yaml
   - ./gateway-requestauthentication.yaml
+  - ./serviceentry-gateway-hosts.yaml
