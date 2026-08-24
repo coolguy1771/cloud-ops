@@ -1,0 +1,78 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# OTLP/HTTP trace ingestion -> distributor (requires tempo:write). gRPC OTLP (4317) stays cluster-internal only.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tempo-write
+  labels:
+    app: tempo-write
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: tempo.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: istio
+      namespace: istio-ingress
+      sectionName: tempo
+  hostnames:
+    - tempo.cloud.witl.xyz
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /v1/traces
+      backendRefs:
+        - name: tempo-distributor
+          port: 4318
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# /ready without JWT so health checks (e.g. Grafana datasource) can succeed when using external Tempo URL.
+# JWT enforcement is by host+path at the Gateway (AuthorizationPolicy), not HTTPRoute labels;
+# see istio-ingress/gateway/app/tempo-authorizationpolicy.yaml. /ready is intentionally excluded there.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tempo-ready
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: tempo.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: istio
+      namespace: istio-ingress
+      sectionName: tempo
+  hostnames:
+    - tempo.cloud.witl.xyz
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /ready
+      backendRefs:
+        - name: tempo-query-frontend
+          port: 3200
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
+# Query API -> query-frontend (requires tempo:read). Covers /api/search, /api/traces, /api/metrics, etc.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tempo-read
+  labels:
+    app: tempo
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: tempo.cloud.witl.xyz
+spec:
+  parentRefs:
+    - name: istio
+      namespace: istio-ingress
+      sectionName: tempo
+  hostnames:
+    - tempo.cloud.witl.xyz
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: tempo-query-frontend
+          port: 3200

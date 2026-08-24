@@ -46,6 +46,17 @@ spec:
     meshConfig:
       pathNormalization:
         normalization: DECODE_AND_MERGE_SLASHES
+      extensionProviders:
+        - name: tempo
+          opentelemetry:
+            service: tempo-distributor.observability.svc.cluster.local
+            port: 4318
+            http:
+              path: /v1/traces
+              timeout: 10s
+              headers:
+                # Tempo multitenancy: same org-id as Grafana/Mimir (1Password grafana-datasource-org).
+                X-Scope-OrgID: "${ORG_ID}"
     pilot:
       env:
         PILOT_ENABLE_AMBIENT_CONTROLLERS: "true"

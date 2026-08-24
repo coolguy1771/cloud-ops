@@ -9,3 +9,4 @@ resources:
   - ./secretstore.yaml
   - ./externalsecret.yaml
   - ./blueprint-kiali.yaml
+  - ./blueprint-tempo-m2m.yaml

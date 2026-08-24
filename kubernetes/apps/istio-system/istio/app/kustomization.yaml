@@ -10,5 +10,7 @@ resources:
   - ./istiod-helmrelease.yaml
   - ./istiod-ocirepository.yaml
   - ./peerauthentication.yaml
+  - ./servicemonitors.yaml
+  - ./telemetry.yaml
   - ./ztunnel-helmrelease.yaml
   - ./ztunnel-ocirepository.yaml

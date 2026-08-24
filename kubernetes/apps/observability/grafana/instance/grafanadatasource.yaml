@@ -87,3 +87,35 @@ spec:
         secretKeyRef:
           name: grafana-datasource-org
           key: ORG_ID
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: tempo
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: tempo
+    name: tempo
+    uid: tempo
+    access: proxy
+    editable: false
+    url: http://tempo-query-frontend.observability.svc.cluster.local:3200
+    jsonData:
+      httpHeaderName1: "X-Scope-OrgID"
+      tracesToLogsV2:
+        datasourceUid: loki
+      serviceMap:
+        datasourceUid: prometheus
+    secureJsonData:
+      httpHeaderValue1: "${ORG_ID}"
+  valuesFrom:
+    - targetPath: "secureJsonData.httpHeaderValue1"
+      valueFrom:
+        secretKeyRef:
+          name: grafana-datasource-org
+          key: ORG_ID

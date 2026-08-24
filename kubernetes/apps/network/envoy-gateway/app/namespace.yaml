@@ -4,5 +4,6 @@ kind: Namespace
 metadata:
   name: network
   labels:
+    istio.io/dataplane-mode: ambient
     name: network
     pod-security.kubernetes.io/enforce: privileged

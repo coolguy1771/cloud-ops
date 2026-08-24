@@ -1,0 +1,25 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/requestauthentication_v1.json
+# Validates JWTs from authentik's tempo-m2m client_credentials provider on the ingress gateway itself
+# (RequestAuthentication only validates tokens that ARE presented; enforcement that one must be
+# presented, and with the right scope, is the AuthorizationPolicy in tempo-authorizationpolicy.yaml).
+apiVersion: security.istio.io/v1
+kind: RequestAuthentication
+metadata:
+  name: tempo-jwt
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: istio
+  jwtRules:
+    - issuer: "https://auth.cloud.witl.xyz/application/o/tempo/"
+      jwksUri: "https://auth.cloud.witl.xyz/application/o/tempo/jwks/"
+      # authentik's `scope` claim is a standard space-separated OAuth2 string
+      # (e.g. "tempo:read tempo:write"); this makes AuthorizationPolicy match individual words in it.
+      spaceDelimitedClaims:
+        - scope
+      # Replaces Envoy Gateway SecurityPolicy's claimToHeaders: sub -> X-Scope-OrgID.
+      outputClaimToHeaders:
+        - header: X-Scope-OrgID
+          claim: sub

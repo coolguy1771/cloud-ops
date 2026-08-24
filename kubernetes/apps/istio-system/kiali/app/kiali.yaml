@@ -26,6 +26,33 @@ spec:
       root_namespace: istio-system
     prometheus:
       url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+      health_check_url: http://mimir.mimir-system.svc.cluster.local:8080/ready
+      custom_headers:
+        X-Scope-OrgID: "${mimir_org_id}"
+    grafana:
+      enabled: true
+      internal_url: http://grafana-service.observability.svc.cluster.local:3000
+      external_url: https://grafana.cloud.witl.xyz
+      datasource_uid: prometheus
+      auth:
+        type: basic
+        username: admin
+        password: "secret:kiali-grafana:password"
+      dashboards:
+        - name: "Istio Service Dashboard"
+          variables:
+            datasource: "var-datasource"
+            namespace: "var-namespace"
+            service: "var-service"
+        - name: "Istio Workload Dashboard"
+          variables:
+            datasource: "var-datasource"
+            namespace: "var-namespace"
+            workload: "var-workload"
+        - name: "Istio Mesh Dashboard"
+        - name: "Istio Control Plane Dashboard"
+        - name: "Istio Performance Dashboard"
+        - name: "Istio Wasm Extension Dashboard"
   server:
     web_fqdn: kiali.cloud.witl.xyz
     web_schema: https

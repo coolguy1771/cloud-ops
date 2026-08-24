@@ -27,6 +27,7 @@ spec:
     blueprints:
       configMaps:
         - authentik-blueprint-kiali
+        - authentik-blueprint-tempo-m2m
     global:
       volumes:
         - name: postgres-ca

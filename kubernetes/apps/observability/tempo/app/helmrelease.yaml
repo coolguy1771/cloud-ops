@@ -1,0 +1,60 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tempo
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: tempo
+  interval: 1h
+  values:
+    fullnameOverride: tempo
+    # Multi-tenant like Loki/Mimir: X-Scope-OrgID scopes traces per source cluster
+    # (this cluster, home-ops, ...). Internal writers must set the header themselves.
+    multitenancyEnabled: true
+    global:
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+    traces:
+      otlp:
+        http:
+          enabled: true
+        grpc:
+          enabled: true
+    storage:
+      trace:
+        backend: s3
+        s3:
+          bucket: "${TEMPO_BUCKET_TRACES}"
+          endpoint: "${S3_ENDPOINT}"
+          region: "auto"
+          access_key: "${S3_ACCESS_KEY_ID}"
+          secret_key: "${S3_SECRET_ACCESS_KEY}"
+          # R2's S3-compatible endpoint only supports path-style addressing.
+          forcepathstyle: true
+          insecure: false
+    # Single-node replication, matching the Loki/Mimir replication_factor: 1 pattern.
+    ingester:
+      replicas: 1
+      config:
+        replication_factor: 1
+    distributor:
+      replicas: 1
+    querier:
+      replicas: 1
+    queryFrontend:
+      replicas: 1
+    compactor:
+      replicas: 1
+    memcached:
+      replicas: 1
+    gateway:
+      enabled: false
+    metaMonitoring:
+      serviceMonitor:
+        enabled: true

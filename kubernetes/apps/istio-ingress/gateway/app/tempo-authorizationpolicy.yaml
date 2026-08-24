@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1.json
+# DENY rules (not ALLOW) so this only adds restrictions to tempo.cloud.witl.xyz paths and doesn't
+# flip the gateway workload to default-deny for other hosts sharing it (e.g. kiali.cloud.witl.xyz).
+#
+# A request with no JWT at all has no `scope` claim, which also satisfies `notValues` (the claim
+# doesn't equal the required value because it doesn't exist) -- so these rules deny both "no token"
+# and "token missing the right scope" without a separate notRequestPrincipals rule. Verify this
+# against a live request without an Authorization header before trusting it in production.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: tempo-jwt-required
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: istio
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/v1/traces*"]
+      when:
+        - key: request.auth.claims[scope]
+          notValues: ["tempo:write"]
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/api*"]
+      when:
+        - key: request.auth.claims[scope]
+          notValues: ["tempo:read"]

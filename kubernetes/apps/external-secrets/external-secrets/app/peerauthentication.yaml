@@ -1,0 +1,14 @@
+---
+# API server and other non-ambient clients call ESO validating webhooks over
+# plain TLS. Ambient STRICT mTLS on the webhook pods causes EOF validation failures.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: external-secrets-webhook
+  namespace: external-secrets
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets-webhook
+  mtls:
+    mode: PERMISSIVE

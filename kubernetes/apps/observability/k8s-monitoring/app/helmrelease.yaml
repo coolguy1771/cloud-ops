@@ -1,0 +1,66 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: k8s-monitoring
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: k8s-monitoring
+  dependsOn:
+    - name: mimir
+      namespace: mimir-system
+  interval: 1h
+  timeout: 15m
+  values:
+    cluster:
+      name: cloud-ops
+    destinations:
+      mimir:
+        type: prometheus
+        url: http://mimir.mimir-system.svc.cluster.local:8080/api/v1/push
+        secret:
+          create: false
+          name: k8s-monitoring-mimir-org
+        tenantIdKey: tenantId
+    prometheusOperatorObjects:
+      enabled: true
+      collector: alloy-metrics
+    integrations:
+      collector: alloy-metrics
+      istio:
+        instances:
+          - name: istio
+            # Ambient mesh: no per-pod sidecars; istiod control-plane metrics only.
+            # ztunnel + ingress gateway stay on PodMonitors below.
+            sidecarMetrics:
+              enabled: false
+            istiodMetrics:
+              enabled: true
+              namespace: istio-system
+              serviceName: istiod
+    clusterMetrics:
+      enabled: false
+    hostMetrics:
+      enabled: false
+    clusterEvents:
+      enabled: false
+    podLogsViaKubernetesApi:
+      enabled: false
+    annotationAutodiscovery:
+      enabled: false
+    applicationObservability:
+      enabled: false
+    autoInstrumentation:
+      enabled: false
+    profiling:
+      enabled: false
+    selfReporting:
+      enabled: false
+    collectors:
+      alloy-metrics:
+        presets:
+          - clustered
+        alloy:
+          clustering:
+            portName: tcp

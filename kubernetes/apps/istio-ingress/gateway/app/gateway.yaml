@@ -25,3 +25,19 @@ spec:
         certificateRefs:
           - kind: Secret
             name: cloud-witl-xyz-tls
+    # First app migrated off Envoy Gateway (envoy.cloud.witl.xyz) as a pilot for the wider migration.
+    - name: tempo
+      protocol: HTTPS
+      port: 443
+      hostname: "tempo.cloud.witl.xyz"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloud-witl-xyz-tls

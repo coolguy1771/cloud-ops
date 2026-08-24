@@ -19,6 +19,8 @@ spec:
     substituteFrom:
       - kind: Secret
         name: kiali-oauth-client-id
+      - kind: Secret
+        name: kiali-mimir-org
   prune: true
   sourceRef:
     kind: GitRepository

@@ -161,6 +161,8 @@ spec:
             limits:
               max_global_series_per_user: 1000000
               max_global_series_per_metric: 100000
+              # Istio TCP metrics (ztunnel/gateway) carry ~36 labels; default is 30
+              max_label_names_per_series: 50
               ingestion_rate: 100000
               ingestion_burst_size: 200000
               out_of_order_time_window: 5m
