@@ -25,7 +25,8 @@ data:
           name: Kiali
           client_type: confidential
           client_id: kiali
-          client_secret: !Env KIALI_OAUTH_CLIENT_SECRET
+          # client_secret omitted: Authentik generates; copy into 1Password
+          # item kiali-oauth (vault cloud-ops) for the Kiali ExternalSecret.
           redirect_uris:
             - matching_mode: strict
               url: https://kiali.cloud.witl.xyz/
