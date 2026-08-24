@@ -8,7 +8,7 @@ spec:
   auth:
     strategy: openid
     openid:
-      client_id: "kiali"
+      client_id: "${client_id}"
       disable_rbac: true
       issuer_uri: "https://auth.cloud.witl.xyz/application/o/kiali/"
       scopes:

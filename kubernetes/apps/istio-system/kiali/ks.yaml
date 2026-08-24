@@ -7,12 +7,18 @@ spec:
   dependsOn:
     - name: kiali-operator
       namespace: istio-system
+    - name: kiali-secrets
+      namespace: istio-system
     - name: istio-ingress-gateway
       namespace: istio-ingress
     - name: mimir
       namespace: mimir-system
   interval: 1h
   path: ./kubernetes/apps/istio-system/kiali/app
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: kiali-oauth-client-id
   prune: true
   sourceRef:
     kind: GitRepository
