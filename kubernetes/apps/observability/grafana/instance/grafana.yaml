@@ -34,7 +34,7 @@ spec:
       client_id: "${GRAFANA_OAUTH_CLIENT_ID}"
       client_secret: "${GRAFANA_OAUTH_CLIENT_SECRET}"
       scopes: "openid profile email tenant"
-      auth_url: "https://auth.cloud.witl.xyz/application/o/grafana/authorize/"
+      auth_url: "https://auth.cloud.witl.xyz/application/o/authorize/"
       token_url: "https://auth.cloud.witl.xyz/application/o/token/"
       api_url: "https://auth.cloud.witl.xyz/application/o/userinfo/"
       name_attribute_path: "name"
