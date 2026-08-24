@@ -12,7 +12,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: tempo
+      sectionName: https
   hostnames:
     - tempo.cloud.witl.xyz
   rules:
@@ -35,7 +35,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: tempo
+      sectionName: https
   hostnames:
     - tempo.cloud.witl.xyz
   rules:
@@ -60,7 +60,7 @@ spec:
   parentRefs:
     - name: istio
       namespace: istio-ingress
-      sectionName: tempo
+      sectionName: https
   hostnames:
     - tempo.cloud.witl.xyz
   rules:

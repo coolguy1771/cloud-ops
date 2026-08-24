@@ -8,8 +8,9 @@ spec:
   hostnames:
     - flux-operator.cloud.witl.xyz
   parentRefs:
-    - name: envoy
-      namespace: network
+    - name: istio
+      namespace: istio-ingress
+      sectionName: https
   rules:
     - backendRefs:
         - name: flux-operator

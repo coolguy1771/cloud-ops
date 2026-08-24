@@ -11,8 +11,8 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: loki.cloud.witl.xyz
 spec:
   parentRefs:
-    - name: envoy
-      namespace: network
+    - name: istio
+      namespace: istio-ingress
       sectionName: https
   hostnames:
     - loki.cloud.witl.xyz
@@ -45,8 +45,8 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: loki.cloud.witl.xyz
 spec:
   parentRefs:
-    - name: envoy
-      namespace: network
+    - name: istio
+      namespace: istio-ingress
       sectionName: https
   hostnames:
     - loki.cloud.witl.xyz
@@ -71,8 +71,8 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: loki.cloud.witl.xyz
 spec:
   parentRefs:
-    - name: envoy
-      namespace: network
+    - name: istio
+      namespace: istio-ingress
       sectionName: https
   hostnames:
     - loki.cloud.witl.xyz
@@ -148,8 +148,8 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: loki.cloud.witl.xyz
 spec:
   parentRefs:
-    - name: envoy
-      namespace: network
+    - name: istio
+      namespace: istio-ingress
       sectionName: https
   hostnames:
     - loki.cloud.witl.xyz

@@ -14,8 +14,8 @@ spec:
       namespace: database
     - name: onepassword-connect
       namespace: external-secrets
-    - name: envoy-gateway
-      namespace: network
+    - name: istio-ingress-gateway
+      namespace: istio-ingress
   healthChecks:
     - apiVersion: helm.toolkit.fluxcd.io/v2
       kind: HelmRelease

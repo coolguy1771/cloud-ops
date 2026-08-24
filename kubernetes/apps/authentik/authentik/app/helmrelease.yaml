@@ -85,8 +85,8 @@ spec:
           hostnames:
             - auth.cloud.witl.xyz
           parentRefs:
-            - name: envoy
-              namespace: network
+            - name: istio
+              namespace: istio-ingress
               sectionName: https
     worker:
       replicas: 2
