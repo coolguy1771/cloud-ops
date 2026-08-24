@@ -6,9 +6,10 @@ metadata:
   name: tempo-jwt
   namespace: istio-ingress
 spec:
-  selector:
-    matchLabels:
-      gateway.networking.k8s.io/gateway-name: istio
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
   jwtRules:
     - issuer: "https://auth.cloud.witl.xyz/application/o/grafana/"
       jwksUri: "https://auth.cloud.witl.xyz/application/o/grafana/jwks/"

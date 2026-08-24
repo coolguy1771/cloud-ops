@@ -6,9 +6,10 @@ metadata:
   name: tempo-jwt-required
   namespace: istio-ingress
 spec:
-  selector:
-    matchLabels:
-      gateway.networking.k8s.io/gateway-name: istio
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
   action: ALLOW
   rules:
     # Shared istio Gateway also serves Kiali (https listener). Without an explicit
