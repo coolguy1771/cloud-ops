@@ -20,12 +20,6 @@ spec:
         secretName: authentik-secrets
       error_reporting:
         enabled: false
-    blueprints:
-      configMaps:
-        - authentik-blueprint-kiali
-        - authentik-blueprint-grafana
-        - authentik-blueprint-grafana-kiali-m2m
-        - authentik-blueprint-tempo-m2m
     global:
       volumes:
         - name: postgres-ca

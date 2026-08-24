@@ -8,7 +8,3 @@ resources:
   - ./serviceaccount-ca.yaml
   - ./secretstore.yaml
   - ./externalsecret.yaml
-  - ./blueprint-kiali.yaml
-  - ./blueprint-grafana.yaml
-  - ./blueprint-grafana-kiali-m2m.yaml
-  - ./blueprint-tempo-m2m.yaml
