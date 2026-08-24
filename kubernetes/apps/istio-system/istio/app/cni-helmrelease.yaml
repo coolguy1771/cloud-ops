@@ -22,9 +22,3 @@ spec:
     cni:
       ambient:
         enabled: true
-    env:
-      HOST_PROBE_SNAT_IP:
-        valueFrom:
-          fieldRef:
-            apiVersion: v1
-            fieldPath: status.hostIP
