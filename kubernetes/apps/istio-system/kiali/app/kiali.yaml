@@ -1,0 +1,32 @@
+---
+apiVersion: kiali.io/v1alpha1
+kind: Kiali
+metadata:
+  name: kiali
+  namespace: istio-system
+spec:
+  auth:
+    strategy: openid
+    openid:
+      client_id: "kiali"
+      disable_rbac: true
+      issuer_uri: "https://auth.cloud.witl.xyz/application/o/kiali/"
+      scopes:
+        - openid
+        - profile
+        - email
+      username_claim: email
+  deployment:
+    cluster_wide_access: true
+    view_only_mode: true
+    accessible_namespaces:
+      - "**"
+  external_services:
+    istio:
+      root_namespace: istio-system
+    prometheus:
+      url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+  server:
+    web_fqdn: kiali.cloud.witl.xyz
+    web_schema: https
+    web_port: 443

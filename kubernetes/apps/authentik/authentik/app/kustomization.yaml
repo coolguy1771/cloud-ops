@@ -8,3 +8,5 @@ resources:
   - ./serviceaccount-ca.yaml
   - ./secretstore.yaml
   - ./externalsecret.yaml
+  - ./externalsecret-kiali-oauth.yaml
+  - ./blueprint-kiali.yaml

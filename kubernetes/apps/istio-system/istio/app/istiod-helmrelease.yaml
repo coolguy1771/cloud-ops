@@ -19,6 +19,33 @@ spec:
       retries: 3
   values:
     profile: ambient
+    autoscaleEnabled: true
+    autoscaleMin: 2
+    autoscaleMax: 5
+    rollingMaxUnavailable: 1
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - istiod
+            topologyKey: kubernetes.io/hostname
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - istiod
+              topologyKey: topology.kubernetes.io/zone
+    meshConfig:
+      pathNormalization:
+        normalization: DECODE_AND_MERGE_SLASHES
     pilot:
       env:
         PILOT_ENABLE_AMBIENT_CONTROLLERS: "true"

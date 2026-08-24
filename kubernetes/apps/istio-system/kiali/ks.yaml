@@ -1,0 +1,22 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kiali
+spec:
+  dependsOn:
+    - name: kiali-operator
+      namespace: istio-system
+    - name: istio-ingress-gateway
+      namespace: istio-ingress
+    - name: mimir
+      namespace: mimir-system
+  interval: 1h
+  path: ./kubernetes/apps/istio-system/kiali/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: istio-system
+  wait: true

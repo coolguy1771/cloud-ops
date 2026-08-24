@@ -1,0 +1,5 @@
+.worktrees/
+.DS_Store
+.claude/
+.cursor/
+hcloud-amd64.raw.xz
