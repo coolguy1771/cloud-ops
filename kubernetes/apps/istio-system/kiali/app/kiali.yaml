@@ -29,4 +29,4 @@ spec:
   server:
     web_fqdn: kiali.cloud.witl.xyz
     web_schema: https
-    web_port: 443
+    web_port: "443"
