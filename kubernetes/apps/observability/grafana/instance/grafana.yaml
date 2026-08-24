@@ -62,7 +62,7 @@ spec:
   deployment:
     spec:
       strategy:
-        type: RollingUpdate
+        type: Recreate
       template:
         spec:
           containers:
