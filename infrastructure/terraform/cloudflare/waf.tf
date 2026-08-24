@@ -9,6 +9,8 @@ resource "cloudflare_access_rule" "hetzner_asn_allow" {
 }
 
 locals {
+  imported_rules_file = "${path.module}/existing_custom_rules.auto.tfvars.json"
+
   authentik_oidc_skip_rule = {
     ref         = "skip_authentik_oidc_endpoints"
     description = "Skip WAF/SBFM/ratelimit for Authentik OIDC endpoints"
@@ -46,6 +48,16 @@ locals {
     [local.authentik_oidc_skip_rule],
     var.zone_custom_firewall_extra_rules,
   )
+}
+
+check "zone_custom_firewall_import_artifact" {
+  assert {
+    condition = fileexists(local.imported_rules_file)
+    error_message = <<-EOT
+      Missing ${local.imported_rules_file}. Run ./scripts/import-zone-custom-ruleset.sh
+      before terraform plan/apply so existing dashboard WAF rules are preserved.
+    EOT
+  }
 }
 
 resource "cloudflare_ruleset" "zone_custom_firewall" {

@@ -8,4 +8,5 @@ resources:
   - ./grafana/ks.yaml
   - ./loki/app
   - ./tempo/app
+  - ./k8s-monitoring/secrets/ks.yaml
   - ./k8s-monitoring/ks.yaml

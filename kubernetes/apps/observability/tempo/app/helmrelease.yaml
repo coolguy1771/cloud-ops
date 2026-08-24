@@ -12,12 +12,6 @@ spec:
   values:
     fullnameOverride: tempo
     multitenancyEnabled: true
-    global:
-      extraArgs:
-        - "-config.expand-env=true"
-      extraEnvFrom:
-        - secretRef:
-            name: tempo-r2-credentials
     traces:
       otlp:
         http:
@@ -37,16 +31,45 @@ spec:
           insecure: false
     ingester:
       replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClass: hcloud-volumes
       config:
         replication_factor: 1
     distributor:
       replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
     querier:
       replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
     queryFrontend:
       replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
     compactor:
       replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
     memcached:
       replicas: 1
     gateway:

@@ -50,6 +50,7 @@ spec:
       email_claim: sub
       username_claim: sub
       jwk_set_url: "https://auth.cloud.witl.xyz/application/o/grafana-kiali-m2m/jwks/"
+      expect_claims: '{"iss":"https://auth.cloud.witl.xyz/application/o/grafana-kiali-m2m/"}'
       auto_sign_up: "true"
       role_attribute_path: "'Viewer'"
     auth.anonymous:
