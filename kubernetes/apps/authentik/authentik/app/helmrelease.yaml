@@ -68,6 +68,9 @@ spec:
           value: "true"
         - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_MAX_AGE
           value: "0"
+        # Trust mesh/proxy hops; gateway Lua sets X-Real-IP / X-Forwarded-For from CF-Connecting-IP.
+        - name: AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS
+          value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
     server:
       replicas: 2
       pdb:

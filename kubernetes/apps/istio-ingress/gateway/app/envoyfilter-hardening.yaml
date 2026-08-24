@@ -1,6 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/networking.istio.io/envoyfilter_v1alpha3.json
-# Edge hardening for the Istio Gateway (replaces Envoy Gateway ClientTrafficPolicy knobs).
+# Edge hardening + real-IP / forwarded headers for Cloudflare → Istio Gateway → apps.
+# Path: client → Cloudflare (CF-Connecting-IP + XFF) → Hetzner L4 LB → Envoy.
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -41,6 +42,13 @@ spec:
           name: envoy.filters.network.http_connection_manager
           typed_config:
             "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+            # Trust one proxy hop (Cloudflare). Hetzner LB is L4 and does not append XFF.
+            use_remote_address: true
+            xff_num_trusted_hops: 1
+            skip_xff_append: false
+            append_x_forwarded_port: true
+            generate_request_id: true
+            preserve_external_request_id: true
             common_http_protocol_options:
               idle_timeout: 300s
               headers_with_underscores_action: REJECT_REQUEST
@@ -48,6 +56,50 @@ spec:
               max_concurrent_streams: 100
               initial_stream_window_size: 65536
               initial_connection_window_size: 1048576
+    # Prefer Cloudflare's CF-Connecting-IP for apps that read X-Real-IP / X-Forwarded-For.
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.lua.real_ip
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+            defaultSourceCode:
+              inlineString: |
+                function envoy_on_request(handle)
+                  local cf = handle:headers():get("cf-connecting-ip")
+                  local xff = handle:headers():get("x-forwarded-for")
+                  local ip = cf
+                  if ip == nil or ip == "" then
+                    if xff ~= nil and xff ~= "" then
+                      ip = string.match(xff, "([^,%s]+)")
+                    end
+                  end
+                  if ip ~= nil and ip ~= "" then
+                    handle:headers():replace("x-real-ip", ip)
+                    -- Ensure the leftmost XFF entry is the client when CF header is present.
+                    if cf ~= nil and cf ~= "" then
+                      handle:headers():replace("x-forwarded-for", cf)
+                    end
+                  end
+                  if handle:headers():get("x-forwarded-proto") == nil then
+                    handle:headers():add("x-forwarded-proto", "https")
+                  end
+                  if handle:headers():get("x-forwarded-host") == nil then
+                    local host = handle:headers():get(":authority")
+                    if host ~= nil then
+                      handle:headers():add("x-forwarded-host", host)
+                    end
+                  end
+                end
     - applyTo: HTTP_FILTER
       match:
         context: GATEWAY

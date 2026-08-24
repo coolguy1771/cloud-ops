@@ -19,6 +19,8 @@ spec:
     server:
       enable_gzip: "true"
       root_url: "https://grafana.cloud.witl.xyz"
+      # Honor X-Forwarded-* from Istio Gateway (real client IP / scheme).
+      serve_from_sub_path: "false"
     analytics:
       check_for_updates: "false"
       check_for_plugin_updates: "false"
