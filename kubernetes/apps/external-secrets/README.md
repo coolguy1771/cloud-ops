@@ -133,7 +133,7 @@ Based on the ExternalSecret resources, create these items in your vault:
 | `external-dns-aws-roles-anywhere` | `trust_anchor_arn`, `profile_arn`, `role_arn`, `aws_region`, `certificate`, `private_key` |
 | `grafana-datasource-org` | `org-id` (named tenant for Alloy/istiod/Kiali; `witl-xyz` is shared by the home-ops and cloud-ops clusters) |
 | `observability-m2m` | Platform M2M (`client_id`, `client_secret`); JWT `tenant_id` defaults to `witl-xyz` |
-| `observability-m2m-<tenant>` | Extra tenant M2M (`client_id`, `username`, `password`, `tenant-id`); e.g. `observability-m2m-icbplays-net` for `*.icbplays.net` |
+| `observability-m2m-<tenant>` | Extra tenant M2M (`client_id`, `username`, `app-password`, `tenant-id`); e.g. `observability-m2m-icbplays-net` for `*.icbplays.net` |
 | `mimir` | `s3_endpoint`, `s3_access_key_id`, `s3_secret_access_key`, `mimir_bucket` |
 | `flux` | `FLUX_GITHUB_APP_PRIVATE_KEY` |
 
