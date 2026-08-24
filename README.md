@@ -21,8 +21,8 @@ Kubernetes GitOps for a Talos cluster on Hetzner Cloud, managed with Flux and bo
 └────────────┬───────────────────────────────┬────────────────────┘
              │                               │
 ┌────────────▼────────────┐    ┌─────────────▼────────────────────┐
-│  Istio Ambient Mode     │    │  Envoy Gateway (ingress)         │
-│  istiod · cni · ztunnel │    │  external-dns · cloudflare-tunnel│
+│  Istio Ambient Mode     │    │  Istio Gateway (ingress)         │
+│  istiod · cni · ztunnel │    │  external-dns · Cloudflare proxy │
 └─────────────────────────┘    └──────────────────────────────────┘
 ```
 
@@ -31,10 +31,10 @@ Kubernetes GitOps for a Talos cluster on Hetzner Cloud, managed with Flux and bo
 | Infrastructure | Terraform (`infrastructure/terraform`) — Hetzner Cloud + Omni cluster |
 | Bootstrap | Helmfile (`bootstrap/helmfile`) installs CRDs and core platform charts before Flux takes over |
 | GitOps | Flux Operator + FluxInstance sync `kubernetes/flux/cluster` |
-| Networking | Cilium KPR, Istio ambient mesh, Envoy Gateway |
+| Networking | Cilium KPR, Istio ambient mesh, Istio Gateway ingress |
 | Secrets | External Secrets Operator + 1Password Connect |
 | Observability | Grafana Operator, Mimir, Loki |
-| CI/CD | GitHub Actions (flux-local, renovate, image-pull) + ARC v2 self-hosted runners |
+| CI/CD | GitHub Actions (flux-local, renovate) + ARC v2 self-hosted runners |
 
 ## Repository layout
 
@@ -135,10 +135,7 @@ Self-hosted runners use [Actions Runner Controller v2](https://github.com/action
 | Scale set | `cloud-ops-runner` (0–3 runners) |
 | Runner image | `ghcr.io/home-operations/actions-runner` |
 | Storage | `hcloud-volumes` (25 Gi work volume) |
-| Talos access | `os:admin` via Talos ServiceAccount (for `talosctl image pull`) |
 | Secrets | 1Password item `actions-runner` via External Secrets |
-
-The **Image Pull** workflow uses these runners to pre-pull container images changed in PRs onto cluster nodes via `talosctl`.
 
 ### Required secrets
 
@@ -153,7 +150,6 @@ The **Image Pull** workflow uses these runners to pre-pull container images chan
 |----------|---------|---------|
 | `flux-local.yaml` | PR to `main` | Validate and diff Kubernetes manifests |
 | `renovate.yaml` | Hourly cron, push, manual | Dependency updates |
-| `image-pull.yaml` | PR to `main` | Pre-pull changed images on cluster nodes |
 | `tag.yaml` | Monthly cron, manual | Create `YYYY.M.patch` release tags |
 | `label-sync.yaml` | Daily cron, push | Sync GitHub labels from `.github/labels.yaml` |
 

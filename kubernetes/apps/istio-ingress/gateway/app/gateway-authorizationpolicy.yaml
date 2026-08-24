@@ -1,0 +1,168 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1.json
+# ALLOW-only on the shared Istio Gateway: every hostname/path must be listed.
+# App-level OIDC (Authentik, Grafana, Kiali) has no JWT gate here.
+# Loki/Mimir/Tempo require Authentik JWTs (Grafana user or observability-m2m).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-jwt-required
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  action: ALLOW
+  rules:
+    # --- UI / IdP / Flux (no gateway JWT) ---
+    - to:
+        - operation:
+            hosts: ["kiali.cloud.witl.xyz"]
+            paths: ["/", "/*"]
+    - to:
+        - operation:
+            hosts: ["grafana.cloud.witl.xyz"]
+            paths: ["/", "/*"]
+    - to:
+        - operation:
+            hosts: ["auth.cloud.witl.xyz"]
+            paths: ["/", "/*"]
+    - to:
+        - operation:
+            hosts: ["flux-operator.cloud.witl.xyz"]
+            paths: ["/", "/*"]
+    - to:
+        - operation:
+            hosts: ["flux-webhook.cloud.witl.xyz"]
+            paths: ["/hook/*"]
+
+    # --- Tempo ---
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/ready*"]
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/api*"]
+      when:
+        - key: request.auth.claims[iss]
+          values: ["https://auth.cloud.witl.xyz/application/o/grafana/"]
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/api*"]
+      when:
+        - key: request.auth.claims[scope]
+          values: ["tempo:read"]
+    - to:
+        - operation:
+            hosts: ["tempo.cloud.witl.xyz"]
+            paths: ["/v1/traces*"]
+      when:
+        - key: request.auth.claims[scope]
+          values: ["tempo:write"]
+
+    # --- Loki ---
+    - to:
+        - operation:
+            hosts: ["loki.cloud.witl.xyz"]
+            paths: ["/ready*"]
+    - to:
+        - operation:
+            hosts: ["loki.cloud.witl.xyz"]
+            paths:
+              - "/api/prom/push*"
+              - "/loki/api/v1/push*"
+              - "/otlp/v1/logs*"
+              - "/ui*"
+              - "/loki/api/v1/delete*"
+      when:
+        - key: request.auth.claims[scope]
+          values: ["loki:write"]
+    - to:
+        - operation:
+            hosts: ["loki.cloud.witl.xyz"]
+            paths:
+              - "/api/prom/query*"
+              - "/api/prom/label*"
+              - "/api/prom/series*"
+              - "/api/prom/tail*"
+              - "/api/prom/rules*"
+              - "/api/prom/api*"
+              - "/loki/api/v1/query*"
+              - "/loki/api/v1/tail*"
+              - "/loki/api/v1/label*"
+              - "/loki/api/v1/series*"
+              - "/loki/api/v1/index*"
+              - "/loki/api/v1/format*"
+              - "/loki/api/v1/detected*"
+              - "/loki/api/v1/patterns*"
+              - "/loki/api/v1/rules*"
+              - "/prometheus/api*"
+      when:
+        - key: request.auth.claims[iss]
+          values: ["https://auth.cloud.witl.xyz/application/o/grafana/"]
+        - key: request.auth.claims[scope]
+          values: ["tenant"]
+    - to:
+        - operation:
+            hosts: ["loki.cloud.witl.xyz"]
+            paths:
+              - "/api/prom/query*"
+              - "/api/prom/label*"
+              - "/api/prom/series*"
+              - "/api/prom/tail*"
+              - "/api/prom/rules*"
+              - "/api/prom/api*"
+              - "/loki/api/v1/query*"
+              - "/loki/api/v1/tail*"
+              - "/loki/api/v1/label*"
+              - "/loki/api/v1/series*"
+              - "/loki/api/v1/index*"
+              - "/loki/api/v1/format*"
+              - "/loki/api/v1/detected*"
+              - "/loki/api/v1/patterns*"
+              - "/loki/api/v1/rules*"
+              - "/prometheus/api*"
+      when:
+        - key: request.auth.claims[scope]
+          values: ["loki:read"]
+
+    # --- Mimir (avoid /api/v1* so push is not readable with mimir:read alone) ---
+    - to:
+        - operation:
+            hosts: ["mimir.cloud.witl.xyz"]
+            paths:
+              - "/api/v1/push*"
+              - "/otlp/v1/metrics*"
+              - "/distributor*"
+              - "/api/v1/upload*"
+      when:
+        - key: request.auth.claims[scope]
+          values: ["mimir:write"]
+    - to:
+        - operation:
+            hosts: ["mimir.cloud.witl.xyz"]
+            paths:
+              - "/prometheus*"
+              - "/ruler*"
+              - "/alertmanager*"
+              - "/multitenant_alertmanager*"
+      when:
+        - key: request.auth.claims[iss]
+          values: ["https://auth.cloud.witl.xyz/application/o/grafana/"]
+        - key: request.auth.claims[scope]
+          values: ["tenant"]
+    - to:
+        - operation:
+            hosts: ["mimir.cloud.witl.xyz"]
+            paths:
+              - "/prometheus*"
+              - "/ruler*"
+              - "/alertmanager*"
+              - "/multitenant_alertmanager*"
+      when:
+        - key: request.auth.claims[scope]
+          values: ["mimir:read"]

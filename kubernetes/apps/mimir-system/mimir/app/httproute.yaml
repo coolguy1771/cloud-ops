@@ -11,9 +11,9 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: mimir.cloud.witl.xyz
 spec:
   parentRefs:
-    - name: envoy
-      namespace: network
-      sectionName: https
+    - name: istio
+      namespace: istio-ingress
+      sectionName: https-mimir
   hostnames:
     - mimir.cloud.witl.xyz
   rules:
@@ -46,9 +46,9 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: mimir.cloud.witl.xyz
 spec:
   parentRefs:
-    - name: envoy
-      namespace: network
-      sectionName: https
+    - name: istio
+      namespace: istio-ingress
+      sectionName: https-mimir
   hostnames:
     - mimir.cloud.witl.xyz
   rules:
@@ -56,9 +56,6 @@ spec:
         - path:
             type: PathPrefix
             value: /prometheus
-        - path:
-            type: PathPrefix
-            value: /api/v1
         - path:
             type: PathPrefix
             value: /ruler

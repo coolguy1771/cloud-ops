@@ -3,7 +3,7 @@
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication
 metadata:
-  name: tempo-jwt
+  name: gateway-jwt
   namespace: istio-ingress
 spec:
   targetRefs:
@@ -13,6 +13,8 @@ spec:
   jwtRules:
     - issuer: "https://auth.cloud.witl.xyz/application/o/grafana/"
       jwksUri: "https://auth.cloud.witl.xyz/application/o/grafana/jwks/"
+      spaceDelimitedClaims:
+        - scope
       outputClaimToHeaders:
         - header: X-Scope-OrgID
           claim: tenant_id

@@ -11,8 +11,9 @@ spec:
   hostnames:
     - flux-webhook.cloud.witl.xyz
   parentRefs:
-    - name: envoy
-      namespace: network
+    - name: istio
+      namespace: istio-ingress
+      sectionName: https-flux-webhook
   rules:
     - backendRefs:
         - name: webhook-receiver

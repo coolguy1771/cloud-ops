@@ -107,8 +107,9 @@ spec:
       hostnames:
         - grafana.cloud.witl.xyz
       parentRefs:
-        - name: envoy
-          namespace: network
+        - name: istio
+          namespace: istio-ingress
+          sectionName: https-grafana
       rules:
         - backendRefs:
             - name: grafana-service

@@ -10,7 +10,7 @@ spec:
     annotations:
       load-balancer.hetzner.cloud/network-zone: eu-central
   listeners:
-    - name: https
+    - name: https-kiali
       protocol: HTTPS
       port: 443
       hostname: "kiali.cloud.witl.xyz"
@@ -25,7 +25,7 @@ spec:
         certificateRefs:
           - kind: Secret
             name: cloud-witl-xyz-tls
-    - name: tempo
+    - name: https-tempo
       protocol: HTTPS
       port: 443
       hostname: "tempo.cloud.witl.xyz"
@@ -35,6 +35,96 @@ spec:
           selector:
             matchLabels:
               kubernetes.io/metadata.name: observability
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloud-witl-xyz-tls
+    - name: https-loki
+      protocol: HTTPS
+      port: 443
+      hostname: "loki.cloud.witl.xyz"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloud-witl-xyz-tls
+    - name: https-grafana
+      protocol: HTTPS
+      port: 443
+      hostname: "grafana.cloud.witl.xyz"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloud-witl-xyz-tls
+    - name: https-mimir
+      protocol: HTTPS
+      port: 443
+      hostname: "mimir.cloud.witl.xyz"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: mimir-system
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloud-witl-xyz-tls
+    - name: https-auth
+      protocol: HTTPS
+      port: 443
+      hostname: "auth.cloud.witl.xyz"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: authentik
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloud-witl-xyz-tls
+    - name: https-flux-operator
+      protocol: HTTPS
+      port: 443
+      hostname: "flux-operator.cloud.witl.xyz"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: flux-system
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: cloud-witl-xyz-tls
+    - name: https-flux-webhook
+      protocol: HTTPS
+      port: 443
+      hostname: "flux-webhook.cloud.witl.xyz"
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: flux-system
       tls:
         mode: Terminate
         certificateRefs:
