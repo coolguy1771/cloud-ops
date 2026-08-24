@@ -1,6 +1,4 @@
 ---
-# Official Istio dashboards (grafana.com) for Kiali metric deep-links.
-# IDs/revisions match Istio 1.30.3; titles must match Kiali external_services.grafana.dashboards.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard

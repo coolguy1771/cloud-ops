@@ -1,13 +1,5 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/telemetry.istio.io/telemetry_v1.json
-# Mesh-wide default: send trace spans to Tempo (extensionProviders.tempo, see istiod-helmrelease.yaml).
-#
-# CAVEAT: ambient ztunnel only proxies L4 (mTLS) and does not generate L7 spans on its own.
-# This Telemetry CR only produces traces for:
-#   - workloads still running sidecars, or
-#   - ambient workloads once behind a waypoint proxy (not deployed yet; see
-#     docs/superpowers/specs/2026-08-24-istio-kiali-design.md, which explicitly defers waypoints).
-# App-level OpenTelemetry SDKs pushing directly to tempo-distributor:4317/4318 work regardless.
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
@@ -17,5 +9,4 @@ spec:
   tracing:
     - providers:
         - name: tempo
-      # Sampled low by default to bound Tigris storage/request costs; raise while debugging.
       randomSamplingPercentage: 10

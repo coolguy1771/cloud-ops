@@ -1,6 +1,4 @@
 ---
-# Ambient dataplane + ingress gateway. Istiod is scraped by k8s-monitoring
-# integrations.istio (see observability/k8s-monitoring).
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:

@@ -24,8 +24,6 @@ data:
         attrs:
           name: Grafana
           client_type: confidential
-          # client_id / client_secret omitted: Authentik generates both.
-          # Copy into 1Password item grafana-oauth (vault cloud-ops) for Grafana.
           redirect_uris:
             - matching_mode: strict
               url: https://grafana.cloud.witl.xyz/login/generic_oauth

@@ -1,7 +1,5 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafana_v1beta1.json
-# See https://grafana.github.io/grafana-operator/docs/examples/grafana/
-#
 apiVersion: grafana.integreatly.org/v1beta1
 kind: Grafana
 metadata:
@@ -11,7 +9,6 @@ metadata:
     dashboards: "grafana"
 spec:
   config:
-    # provisioning = true; kubernetesDashboards = use k8s from browser
     feature_toggles:
       enable: "provisioning,kubernetesDashboards"
     log:

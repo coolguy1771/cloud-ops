@@ -1,6 +1,4 @@
 ---
-# Kiali runs in istio-system (not ambient). Grafana is ambient + mesh STRICT mTLS,
-# which resets plain TCP from Kiali. PERMISSIVE accepts both mTLS and plaintext.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:

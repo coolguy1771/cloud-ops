@@ -1,6 +1,4 @@
 ---
-# OAuth2 client_credentials provider so Kiali can fetch Grafana dashboard metadata.
-# Copy client_id/client_secret into 1Password item grafana-kiali-m2m (vault cloud-ops).
 apiVersion: v1
 kind: ConfigMap
 metadata:

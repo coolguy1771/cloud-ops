@@ -1,7 +1,4 @@
 #!/usr/bin/env bash
-# Discover the zone http_request_firewall_custom entry-point ruleset, preserve
-# any existing custom rules into existing_custom_rules.auto.tfvars.json, append
-# zone_custom_firewall_ruleset_id to terraform.tfvars if missing, then import.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -62,7 +59,6 @@ extras = []
 for rule in result.get("rules") or []:
     if rule.get("ref") == skip_ref:
         continue
-    # Keep Terraform-managed fields only (drop read-only id/version/last_updated).
     keep = {
         k: rule[k]
         for k in (
@@ -96,13 +92,8 @@ with open("existing_custom_rules.auto.tfvars.json", "w") as f:
 print("wrote existing_custom_rules.auto.tfvars.json")
 PY
 
-# Ensure tfvars has the ID if auto.tfvars is ignored for some reason
 if ! grep -q 'zone_custom_firewall_ruleset_id' terraform.tfvars 2>/dev/null; then
   RID="$(python3 -c 'import json; print(json.load(open("existing_custom_rules.auto.tfvars.json"))["zone_custom_firewall_ruleset_id"])')"
   printf '\nzone_custom_firewall_ruleset_id = "%s"\n' "$RID" >> terraform.tfvars
   echo "appended zone_custom_firewall_ruleset_id to terraform.tfvars"
 fi
-
-echo
-echo "Next: terraform plan   # import block + add Authentik OIDC skip, keep existing rules"
-echo "Then: terraform apply"

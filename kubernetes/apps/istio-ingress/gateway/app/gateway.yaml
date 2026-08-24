@@ -25,7 +25,6 @@ spec:
         certificateRefs:
           - kind: Secret
             name: cloud-witl-xyz-tls
-    # First app migrated off Envoy Gateway (envoy.cloud.witl.xyz) as a pilot for the wider migration.
     - name: tempo
       protocol: HTTPS
       port: 443

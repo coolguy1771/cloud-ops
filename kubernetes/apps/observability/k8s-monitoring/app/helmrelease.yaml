@@ -31,8 +31,6 @@ spec:
       istio:
         instances:
           - name: istio
-            # Ambient mesh: no per-pod sidecars; istiod control-plane metrics only.
-            # ztunnel + ingress gateway stay on PodMonitors below.
             sidecarMetrics:
               enabled: false
             istiodMetrics:

@@ -11,8 +11,6 @@ spec:
   interval: 1h
   values:
     fullnameOverride: tempo
-    # Multi-tenant like Loki/Mimir: X-Scope-OrgID scopes traces per source cluster
-    # (this cluster, home-ops, ...). Internal writers must set the header themselves.
     multitenancyEnabled: true
     global:
       extraArgs:
@@ -35,10 +33,8 @@ spec:
           region: "auto"
           access_key: "${S3_ACCESS_KEY_ID}"
           secret_key: "${S3_SECRET_ACCESS_KEY}"
-          # R2's S3-compatible endpoint only supports path-style addressing.
           forcepathstyle: true
           insecure: false
-    # Single-node replication, matching the Loki/Mimir replication_factor: 1 pattern.
     ingester:
       replicas: 1
       config:
