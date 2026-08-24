@@ -2,6 +2,8 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/networking.istio.io/envoyfilter_v1alpha3.json
 # Edge hardening + real-IP / forwarded headers for Cloudflare → Istio Gateway → apps.
 # Path: client → Cloudflare (CF-Connecting-IP + XFF) → Hetzner L4 LB → Envoy.
+# CF client-IP headers are trusted only when the immediate peer is a Cloudflare
+# published address (origin is publicly reachable via the Hetzner LB).
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
@@ -42,9 +44,10 @@ spec:
           name: envoy.filters.network.http_connection_manager
           typed_config:
             "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-            # Trust one proxy hop (Cloudflare). Hetzner LB is L4 and does not append XFF.
+            # Do not trust hop-count XFF: the LB is public. Client IP for apps
+            # comes from CF-Connecting-IP only after Lua verifies the peer is CF.
             use_remote_address: true
-            xff_num_trusted_hops: 1
+            xff_num_trusted_hops: 0
             skip_xff_append: false
             append_x_forwarded_port: true
             generate_request_id: true
@@ -56,7 +59,7 @@ spec:
               max_concurrent_streams: 100
               initial_stream_window_size: 65536
               initial_connection_window_size: 1048576
-    # Prefer Cloudflare's CF-Connecting-IP for apps that read X-Real-IP / X-Forwarded-For.
+    # Prefer Cloudflare's CF-Connecting-IP only when peer ∈ Cloudflare IP ranges.
     - applyTo: HTTP_FILTER
       match:
         context: GATEWAY
@@ -74,29 +77,94 @@ spec:
             "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
             defaultSourceCode:
               inlineString: |
+                -- Cloudflare published ranges: https://www.cloudflare.com/ips/
+                local CF_V4 = {
+                  {"173.245.48.0", 20}, {"103.21.244.0", 22}, {"103.22.200.0", 22},
+                  {"103.31.4.0", 22}, {"141.101.64.0", 18}, {"108.162.192.0", 18},
+                  {"190.93.240.0", 20}, {"188.114.96.0", 20}, {"197.234.240.0", 22},
+                  {"198.41.128.0", 17}, {"162.158.0.0", 15}, {"104.16.0.0", 13},
+                  {"104.24.0.0", 14}, {"172.64.0.0", 13}, {"131.0.72.0", 22},
+                }
+                local CF_V6_PREFIXES = {
+                  "2400:cb00:", "2606:4700:", "2803:f800:", "2405:b500:",
+                  "2405:8100:", "2a06:98c0:", "2c0f:f248:",
+                }
+
+                local bit = require("bit")
+
+                local function ipv4_to_int(ip)
+                  local a, b, c, d = string.match(ip, "^(%d+)%.(%d+)%.(%d+)%.(%d+)$")
+                  if not a then return nil end
+                  a, b, c, d = tonumber(a), tonumber(b), tonumber(c), tonumber(d)
+                  if a > 255 or b > 255 or c > 255 or d > 255 then return nil end
+                  return a * 16777216 + b * 65536 + c * 256 + d
+                end
+
+                local function ipv4_in_cidr(ip, prefix, len)
+                  local n = ipv4_to_int(ip)
+                  local p = ipv4_to_int(prefix)
+                  if not n or not p then return false end
+                  if len <= 0 then return true end
+                  if len >= 32 then return n == p end
+                  local mask = bit.band(bit.lshift(0xffffffff, 32 - len), 0xffffffff)
+                  return bit.band(n, mask) == bit.band(p, mask)
+                end
+
+                local function peer_ip(handle)
+                  local remote = handle:streamInfo():downstreamRemoteAddress()
+                  if remote == nil or remote == "" then return nil end
+                  local v6 = string.match(remote, "^%[(.-)%]:")
+                  if v6 then return string.lower(v6) end
+                  return string.match(remote, "^([^:]+):")
+                end
+
+                local function is_cloudflare(ip)
+                  if ip == nil or ip == "" then return false end
+                  if string.find(ip, ":", 1, true) then
+                    for _, pfx in ipairs(CF_V6_PREFIXES) do
+                      if string.sub(ip, 1, #pfx) == pfx then return true end
+                    end
+                    return false
+                  end
+                  for _, cidr in ipairs(CF_V4) do
+                    if ipv4_in_cidr(ip, cidr[1], cidr[2]) then return true end
+                  end
+                  return false
+                end
+
                 function envoy_on_request(handle)
-                  local cf = handle:headers():get("cf-connecting-ip")
-                  local xff = handle:headers():get("x-forwarded-for")
+                  local from_cf = is_cloudflare(peer_ip(handle))
+                  local headers = handle:headers()
+
+                  if not from_cf then
+                    -- Strip forgeable CF / client-IP headers on direct-to-origin traffic.
+                    headers:remove("cf-connecting-ip")
+                    headers:remove("true-client-ip")
+                    headers:remove("x-real-ip")
+                    return
+                  end
+
+                  local cf = headers:get("cf-connecting-ip")
                   local ip = cf
                   if ip == nil or ip == "" then
+                    local xff = headers:get("x-forwarded-for")
                     if xff ~= nil and xff ~= "" then
                       ip = string.match(xff, "([^,%s]+)")
                     end
                   end
                   if ip ~= nil and ip ~= "" then
-                    handle:headers():replace("x-real-ip", ip)
-                    -- Ensure the leftmost XFF entry is the client when CF header is present.
+                    headers:replace("x-real-ip", ip)
                     if cf ~= nil and cf ~= "" then
-                      handle:headers():replace("x-forwarded-for", cf)
+                      headers:replace("x-forwarded-for", cf)
                     end
                   end
-                  if handle:headers():get("x-forwarded-proto") == nil then
-                    handle:headers():add("x-forwarded-proto", "https")
+                  if headers:get("x-forwarded-proto") == nil then
+                    headers:add("x-forwarded-proto", "https")
                   end
-                  if handle:headers():get("x-forwarded-host") == nil then
-                    local host = handle:headers():get(":authority")
+                  if headers:get("x-forwarded-host") == nil then
+                    local host = headers:get(":authority")
                     if host ~= nil then
-                      handle:headers():add("x-forwarded-host", host)
+                      headers:add("x-forwarded-host", host)
                     end
                   end
                 end

@@ -14,9 +14,8 @@ spec:
     matchNames:
       - istio-ingress
   podMetricsEndpoints:
+    # Istio agent /stats/prometheus already merges agent + Envoy; do not also
+    # scrape http-envoy-prom or Envoy series are duplicated.
     - port: metrics
-      path: /stats/prometheus
-      interval: 30s
-    - port: http-envoy-prom
       path: /stats/prometheus
       interval: 30s
