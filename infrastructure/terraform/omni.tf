@@ -15,15 +15,8 @@ resource "omni_machine_set" "control_plane" {
   role    = "controlplane"
 }
 
-resource "omni_machine_set" "workers" {
-  cluster = omni_cluster.this.name
-  role    = "workers"
-
-  update_strategy = {
-    type            = "Rolling"
-    max_parallelism = 2
-  }
-}
+# The workers machine set is defined in hetzner_infra_provider.tf — it draws
+# from a MachineClass (dynamic allocation) rather than being declared here.
 
 resource "omni_machine_set_node" "control_plane" {
   for_each = toset(local.omni_control_plane_machine_ids)
@@ -31,12 +24,4 @@ resource "omni_machine_set_node" "control_plane" {
   cluster     = omni_cluster.this.name
   machine_id  = each.value
   machine_set = omni_machine_set.control_plane.name
-}
-
-resource "omni_machine_set_node" "worker" {
-  for_each = toset(local.omni_worker_machine_ids)
-
-  cluster     = omni_cluster.this.name
-  machine_id  = each.value
-  machine_set = omni_machine_set.workers.name
 }

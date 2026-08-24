@@ -14,6 +14,14 @@ terraform {
       source  = "siderolabs/omni"
       version = "0.1.0-alpha.3"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.5"
+    }
   }
 
   # Uncomment and configure a remote backend for team use:

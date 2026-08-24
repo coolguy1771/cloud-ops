@@ -1,0 +1,36 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/helmfile
+
+# Extract CRDs from upstream charts and apply with kubectl. Do not helmfile sync
+# these releases — only render CRDs (--include-crds) and pipe to the cluster.
+
+helmDefaults:
+  args:
+    - --include-crds
+    - --no-hooks
+
+bases:
+  - crds-default.yaml
+
+defaultInherit: crds
+
+releases:
+  - name: talos-ccm
+    namespace: kube-system
+
+  - name: external-dns
+    namespace: network
+
+  - name: external-secrets
+    namespace: external-secrets
+
+  - name: envoy-gateway
+    namespace: network
+
+  - name: grafana
+    namespace: observability
+
+  - name: prometheus-operator-crds
+    namespace: observability
+    chart: oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds
+    version: "31.0.1"

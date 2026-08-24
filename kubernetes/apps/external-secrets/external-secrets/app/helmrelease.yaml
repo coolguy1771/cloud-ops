@@ -10,6 +10,8 @@ spec:
     name: external-secrets
   interval: 1h
   values:
+    # CRDs are applied by bootstrap/helmfile/crds.yaml before this release.
+    installCRDs: false
     leaderElect: true
     serviceMonitor:
       enabled: true
@@ -17,3 +19,7 @@ spec:
       enabled: true
     webhook:
       replicaCount: 2
+  install:
+    crds: Skip
+  upgrade:
+    crds: Skip

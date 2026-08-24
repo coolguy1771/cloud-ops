@@ -20,6 +20,13 @@ machine:
   kubelet:
     extraArgs:
       rotate-server-certificates: true
+    # Without this, kubelet auto-picks its node IP based on interface/route
+    # timing at boot, which is non-deterministic — some nodes have landed on
+    # their public IP instead of the private network (10.0.1.0/24, part of
+    # network_ip_range 10.0.0.0/8), breaking cross-node pod traffic to them.
+    nodeIP:
+      validSubnets:
+        - 10.0.0.0/8
 
   # KubePrism proxies the API server locally for node components (Cilium, etc.).
   features:

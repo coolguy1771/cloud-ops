@@ -3,11 +3,6 @@ output "control_plane_ips" {
   value       = hcloud_server.control_plane[*].ipv4_address
 }
 
-output "worker_ips" {
-  description = "Public IPv4 addresses of worker nodes"
-  value       = hcloud_server.worker[*].ipv4_address
-}
-
 output "kubernetes_endpoint" {
   description = "Kubernetes API endpoint — use this as the cluster endpoint in Omni"
   value       = "https://${hcloud_load_balancer.control_plane.ipv4}:6443"
@@ -38,7 +33,15 @@ output "omni_control_plane_machine_set" {
   value       = omni_machine_set.control_plane.name
 }
 
-output "omni_worker_machine_set" {
-  description = "Omni worker machine set ID"
-  value       = omni_machine_set.workers.name
+output "omni_worker_machine_sets" {
+  description = "Omni worker machine set IDs by Hetzner location (dynamic, allocated from per-location MachineClasses)"
+  value = merge(
+    { for location, ms in omni_machine_set.workers : location => ms.name },
+    local.hetzner_worker_machine_set_names
+  )
+}
+
+output "hetzner_worker_machine_classes" {
+  description = "MachineClass names used for dynamic Hetzner worker auto-provisioning, by location"
+  value       = local.hetzner_worker_machine_class_names
 }

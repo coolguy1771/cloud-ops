@@ -57,23 +57,50 @@ variable "control_plane_locations" {
   }
 }
 
+# One-time bootstrap aid: Talos machine UUIDs (from `omnictl get machinestatuses
+# -o yaml`, cross-referenced by network.hostname) for control-plane servers
+# that have booted and joined Omni but aren't in a cluster yet. See
+# omni_discover.tf for why this is needed instead of pure discovery. Safe to
+# leave populated after the fact — once assigned, discovery finds them too and
+# the list is deduplicated.
+variable "control_plane_machine_ids" {
+  description = "Known Talos machine UUIDs to bootstrap into the control-plane machine set, for machines not yet discoverable as ClusterMachines"
+  type        = list(string)
+  default     = []
+}
+
 # --- Workers ---
+# Workers are provisioned dynamically by the Hetzner Omni infra provider (see
+# hetzner_infra_provider.tf) via a MachineClass, not as static hcloud_server
+# resources — these variables configure that MachineClass.
 variable "worker_server_type" {
-  description = "Hetzner server type for worker nodes"
+  description = "Hetzner server type for dynamically auto-provisioned worker nodes"
   type        = string
   default     = "cx32"
 }
 
-variable "worker_count" {
-  description = "Number of Hetzner worker nodes to provision"
-  type        = number
-  default     = 7
+variable "worker_locations" {
+  description = "Map of Hetzner location -> worker count. One MachineClass and one omni_machine_set is created per location (ignored per-location if worker_allocation_type is Unlimited, in which case the count is just the initial/minimum size)."
+  type        = map(number)
+  default = {
+    fsn1 = 7
+  }
+
+  validation {
+    condition     = length(var.worker_locations) > 0
+    error_message = "worker_locations must have at least one entry."
+  }
 }
 
-variable "worker_location" {
-  description = "Hetzner location for worker nodes"
+variable "worker_allocation_type" {
+  description = "Allocation type for the worker machine class: Static (exact size, worker_count) or Unlimited (autoscale to cluster demand)"
   type        = string
-  default     = "fsn1"
+  default     = "Static"
+
+  validation {
+    condition     = contains(["Static", "Unlimited"], var.worker_allocation_type)
+    error_message = "worker_allocation_type must be \"Static\" or \"Unlimited\"."
+  }
 }
 
 # --- Omni ---
@@ -107,4 +134,15 @@ variable "talos_version" {
   description = "Talos version for the Omni cluster (semver, no v prefix)"
   type        = string
   default     = "1.13.7"
+}
+
+# --- Hetzner Omni Infra Provider ---
+# See hetzner_infra_provider.tf. The daemon (github.com/coolguy1771/hetzner-infra-provider)
+# runs outside this repo; Terraform only defines the MachineClass and the
+# machine set that draws from it.
+
+variable "hetzner_infra_provider_id" {
+  description = "ID the omni-infra-provider-hetzner daemon is registered under in Omni (must match its --id flag, and the `omnictl infraprovider create <id>` used to register it)"
+  type        = string
+  default     = "hetzner"
 }

@@ -1,0 +1,81 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/helmfile
+
+# Minimal release chain Flux needs before GitOps takes over. Chart versions and
+# values come from kubernetes/apps/*/app/{ocirepository,helmrelease}.yaml.
+
+helmDefaults:
+  cleanupOnFail: true
+  wait: true
+  waitForJobs: true
+
+bases:
+  - default.yaml
+
+defaultInherit: default
+
+repositories:
+  - name: hcloud
+    url: https://charts.hetzner.cloud
+
+releases:
+  - name: cilium
+    namespace: kube-system
+
+  - name: talos-ccm
+    namespace: kube-system
+    needs:
+      - kube-system/cilium
+
+  - name: cert-manager
+    namespace: cert-manager
+    needs:
+      - kube-system/talos-ccm
+
+  - name: external-secrets
+    namespace: external-secrets
+    needs:
+      - cert-manager/cert-manager
+
+  - name: onepassword-connect
+    namespace: external-secrets
+    hooks:
+      - command: kubectl
+        args:
+          - wait
+          - --for=create
+          - crd/clustersecretstores.external-secrets.io
+          - --timeout=2m
+        events:
+          - postsync
+        showlogs: true
+      - command: bash
+        args:
+          - -c
+          - |
+            set -euo pipefail
+            kubectl -n external-secrets rollout status deploy/external-secrets-webhook --timeout=180s
+            css=../../kubernetes/apps/external-secrets/onepassword-connect/app/clustersecretstore.yaml
+            for i in $(seq 1 36); do
+              if kubectl apply --server-side --field-manager=kustomize-controller --filename="$css"; then
+                exit 0
+              fi
+              sleep 5
+            done
+            echo "Timed out applying ClusterSecretStore" >&2
+            exit 1
+        events:
+          - postsync
+        showlogs: true
+    needs:
+      - external-secrets/external-secrets
+
+  - name: flux-operator
+    namespace: flux-system
+    needs:
+      - external-secrets/onepassword-connect
+
+  - name: flux-instance
+    namespace: flux-system
+    needs:
+      - flux-system/flux-operator

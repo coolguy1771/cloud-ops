@@ -29,7 +29,7 @@ Kubernetes GitOps for a Talos cluster on Hetzner Cloud, managed with Flux and bo
 | Layer | Components |
 |-------|------------|
 | Infrastructure | Terraform (`infrastructure/terraform`) — Hetzner Cloud + Omni cluster |
-| Bootstrap | Helmfile (`bootstrap/helmfile.d`) installs CRDs and core platform charts before Flux takes over |
+| Bootstrap | Helmfile (`bootstrap/helmfile`) installs CRDs and core platform charts before Flux takes over |
 | GitOps | Flux Operator + FluxInstance sync `kubernetes/flux/cluster` |
 | Networking | Cilium KPR, Istio ambient mesh, Envoy Gateway |
 | Secrets | External Secrets Operator + 1Password Connect |
@@ -40,7 +40,7 @@ Kubernetes GitOps for a Talos cluster on Hetzner Cloud, managed with Flux and bo
 
 ```
 .
-├── bootstrap/              # Helmfile bootstrap (CRDs + platform charts)
+├── bootstrap/              # Helmfile bootstrap (CRDs + platform charts); see bootstrap/README.md
 ├── infrastructure/
 │   ├── omni/               # Talos config patches (applied by Terraform)
 │   └── terraform/          # Hetzner Cloud + Omni cluster (single apply)
@@ -77,11 +77,12 @@ This provisions Hetzner servers, load balancers, and the Omni cluster (machine s
 ### 2. Bootstrap the cluster
 
 ```bash
-cd bootstrap
-just bootstrap   # or follow bootstrap/mod.just recipes
+just bootstrap cluster
 ```
 
-Helmfile installs cert-manager, external-secrets, Cilium, Flux, and pre-installs CRDs (including Istio base and Envoy Gateway).
+Helmfile installs Cilium, cert-manager, external-secrets, 1Password Connect, and
+Flux. Chart versions and values are read from `kubernetes/apps/` (same sources
+Flux uses). See [bootstrap/README.md](bootstrap/README.md).
 
 ### 3. Verify GitOps reconciliation
 
@@ -175,7 +176,7 @@ docker run --rm -v "$(pwd):/github/workspace" \
 
 Renovate opens PRs for Helm chart and container image updates. Platform upgrades (Talos, Kubernetes) are set in `infrastructure/terraform/terraform.tfvars` (`talos_version`, `kubernetes_version`).
 
-When upgrading Istio, bump the `tag` in all four `OCIRepository` manifests under `kubernetes/apps/istio-system/istio/app/` and the `istio-base` entry in `bootstrap/helmfile.d/00-crds.yaml` together.
+When upgrading Istio, bump the `tag` in all four `OCIRepository` manifests under `kubernetes/apps/istio-system/istio/app/` and add or update the matching CRD entry in `bootstrap/helmfile/crds.yaml` if needed.
 
 ## License
 
