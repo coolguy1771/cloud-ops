@@ -75,13 +75,6 @@ spec:
         data:
           config.yaml: |-
             ingress:
-              - hostname: "kiali.cloud.witl.xyz"
-                originRequest:
-                  http2Origin: true
-                  keepAliveTimeout: 3600s
-                  originServerName: kiali.cloud.witl.xyz
-                  tcpKeepAlive: 7200s
-                service: https://istio-istio.istio-ingress.svc.cluster.local:443
               - hostname: "*.cloud.witl.xyz"
                 originRequest:
                   http2Origin: true
