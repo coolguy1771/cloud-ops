@@ -9,6 +9,7 @@ resources:
   - ./descheduler/ks.yaml
   - ./hcloud-csi/ks.yaml
   - ./hcloud-ccm/ks.yaml
+  - ./kubelet-csr-approver/ks.yaml
   - ./metrics-server/ks.yaml
   - ./reloader/ks.yaml
   - ./talos-ccm/ks.yaml
