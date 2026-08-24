@@ -31,8 +31,6 @@ spec:
       name: "Authentik"
       allow_sign_up: "true"
       allow_insecure_email_lookup: "true"
-      client_id: "${GRAFANA_OAUTH_CLIENT_ID}"
-      client_secret: "${GRAFANA_OAUTH_CLIENT_SECRET}"
       scopes: "openid profile email tenant"
       auth_url: "https://auth.cloud.witl.xyz/application/o/authorize/"
       token_url: "https://auth.cloud.witl.xyz/application/o/token/"
@@ -75,12 +73,12 @@ spec:
                     secretKeyRef:
                       name: grafana-admin-password-secret
                       key: GF_SECURITY_ADMIN_PASSWORD
-                - name: GRAFANA_OAUTH_CLIENT_ID
+                - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
                   valueFrom:
                     secretKeyRef:
                       name: grafana-oauth
                       key: client-id
-                - name: GRAFANA_OAUTH_CLIENT_SECRET
+                - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
                   valueFrom:
                     secretKeyRef:
                       name: grafana-oauth
