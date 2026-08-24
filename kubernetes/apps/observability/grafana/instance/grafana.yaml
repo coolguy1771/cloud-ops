@@ -62,7 +62,7 @@ spec:
   deployment:
     spec:
       strategy:
-        type: Recreate
+        type: RollingUpdate
       template:
         spec:
           containers:
@@ -83,6 +83,12 @@ spec:
                     secretKeyRef:
                       name: grafana-oauth
                       key: client-secret
+                - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
+                  value: https://auth.cloud.witl.xyz/application/o/authorize/
+                - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
+                  value: https://auth.cloud.witl.xyz/application/o/token/
+                - name: GF_AUTH_GENERIC_OAUTH_API_URL
+                  value: https://auth.cloud.witl.xyz/application/o/userinfo/
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
