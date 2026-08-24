@@ -16,6 +16,17 @@ cluster_name = "cloud-ops"
 control_plane_locations   = ["fsn1", "nbg1", "fsn1"]
 control_plane_server_type = "cx32"
 
-worker_count       = 2
+worker_count       = 7
 worker_server_type = "cx32"
 worker_location    = "fsn1"
+
+# --- Omni (cluster management via Terraform provider) ---
+# Create a key: omnictl serviceaccount create --use-user-role=false <name>
+omni_endpoint = "https://your-instance.omni.siderolabs.io"
+# omni_service_account_key = "..."  # or export OMNI_SERVICE_ACCOUNT_KEY
+
+kubernetes_version = "1.36.1"
+talos_version      = "1.13.7"
+
+# Machines are discovered from Omni via omnictl labels (no machine classes).
+# Assign nodes with: omnictl get clustermachines -l omni.sidero.dev/cluster=cloud-ops

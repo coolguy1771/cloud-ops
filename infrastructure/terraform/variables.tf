@@ -65,13 +65,46 @@ variable "worker_server_type" {
 }
 
 variable "worker_count" {
-  description = "Number of worker nodes"
+  description = "Number of Hetzner worker nodes to provision"
   type        = number
-  default     = 2
+  default     = 7
 }
 
 variable "worker_location" {
   description = "Hetzner location for worker nodes"
   type        = string
   default     = "fsn1"
+}
+
+# --- Omni ---
+variable "omni_endpoint" {
+  description = "Omni API endpoint. Prefer OMNI_ENDPOINT env var or omnictl context URL."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "omni_service_account_key" {
+  description = "Base64-encoded Omni service account key (from `omnictl serviceaccount create`). Prefer OMNI_SERVICE_ACCOUNT_KEY env var."
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
+variable "omni_insecure_skip_tls_verify" {
+  description = "Skip TLS verification for the Omni endpoint (development only)"
+  type        = bool
+  default     = false
+}
+
+variable "kubernetes_version" {
+  description = "Kubernetes version for the Omni cluster (semver, no v prefix)"
+  type        = string
+  default     = "1.36.1"
+}
+
+variable "talos_version" {
+  description = "Talos version for the Omni cluster (semver, no v prefix)"
+  type        = string
+  default     = "1.13.7"
 }

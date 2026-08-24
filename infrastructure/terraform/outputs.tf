@@ -27,3 +27,18 @@ output "network_name" {
   description = "Hetzner private network name"
   value       = hcloud_network.this.name
 }
+
+output "omni_cluster_name" {
+  description = "Omni-managed cluster name"
+  value       = omni_cluster.this.name
+}
+
+output "omni_control_plane_machine_set" {
+  description = "Omni control plane machine set ID"
+  value       = omni_machine_set.control_plane.name
+}
+
+output "omni_worker_machine_set" {
+  description = "Omni worker machine set ID"
+  value       = omni_machine_set.workers.name
+}

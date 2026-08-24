@@ -1,0 +1,30 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: istio-cni
+spec:
+  dependsOn:
+    - name: istiod
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: istio-cni
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    profile: ambient
+    cni:
+      ambient:
+        enabled: true
+    env:
+      HOST_PROBE_SNAT_IP:
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: status.hostIP

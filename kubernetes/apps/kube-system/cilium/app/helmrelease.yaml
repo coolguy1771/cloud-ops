@@ -16,37 +16,45 @@ spec:
     remediation:
       retries: 3
   values:
-    k8sServiceHost: "localhost"
-    k8sServicePort: "7445"
+    k8sServiceHost: 127.0.0.1
+    k8sServicePort: 7445
     kubeProxyReplacement: true
+    kubeProxyReplacementHealthzBindAddr: 0.0.0.0:10256
     waitForKubeProxy: false
     rollOutCiliumPods: true
-    policyCIDRMatchMode: "nodes"
     ipv4:
       enabled: true
     ipv6:
       enabled: false
-    # ipv6NativeRoutingCIDR: "fd00:10:244::/48"
     cni:
-      exclusive: true
+      exclusive: false
       install: true
     encryption:
       enabled: false
       type: ""
-    routingMode: "tunnel"
-    tunnelProtocol: "vxlan"
+    routingMode: tunnel
+    tunnelProtocol: vxlan
     autoDirectNodeRoutes: false
     ipam:
       mode: kubernetes
-    ipv4NativeRoutingCIDR: "10.244.0.0/16"
+    ipv4NativeRoutingCIDR: 10.244.0.0/16
     cgroup:
       autoMount:
         enabled: false
       hostRoot: /sys/fs/cgroup
     iptablesRandomFully: true
     bpf:
-      preallocateMaps: true
       masquerade: false
+      preallocateMaps: true
+    endpointRoutes:
+      enabled: true
+    localRedirectPolicies:
+      enabled: true
+    socketLB:
+      enabled: true
+      hostNamespaceOnly: true
+    envoy:
+      enabled: false
     resources:
       requests:
         cpu: 100m

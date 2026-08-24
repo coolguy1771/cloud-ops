@@ -42,6 +42,16 @@
       minimumGroupSize: 2,
     },
     {
+      description: "Istio Group",
+      groupName: "istio",
+      matchDatasources: ["docker"],
+      matchPackageNames: ["/istio-release/"],
+      group: {
+        commitMessageTopic: "{{{groupName}}} group",
+      },
+      minimumGroupSize: 2,
+    },
+    {
       description: "Kubernetes Group",
       groupName: "kubernetes",
       matchDatasources: ["docker"],

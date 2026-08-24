@@ -1,0 +1,23 @@
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: &name cloud-ops-runner
+spec:
+  endpointSelector:
+    matchLabels:
+      runner: *name
+  enableDefaultDeny:
+    egress: false
+  egressDeny:
+    - toCIDRSet:
+        - cidr: 10.0.0.0/8
+          except:
+            - 10.244.0.0/16
+            - 10.96.0.0/12
+    - toCIDR:
+        - 172.16.0.0/12
+    - toCIDRSet:
+        - cidr: 192.168.0.0/16
+          except:
+            - 192.168.0.0/24

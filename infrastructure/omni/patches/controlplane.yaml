@@ -11,3 +11,4 @@ machine:
         - os:reader
       allowedKubernetesNamespaces:
         - kube-system
+        - actions-runner-system

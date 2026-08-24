@@ -1,4 +1,4 @@
-# Applied to every node in the cluster via the Omni cluster template.
+# Applied to every node in the cluster via Omni config patches (Terraform).
 #
 # Enables the external cloud provider so hcloud-ccm and talos-ccm can manage
 # node lifecycle, load balancers, and routes. Without this flag Kubernetes
@@ -12,7 +12,22 @@ cluster:
     cni:
       name: none
 
+  # Disable kube-proxy; Cilium provides full kube-proxy replacement (KPR).
+  proxy:
+    disabled: true
+
 machine:
   kubelet:
     extraArgs:
       rotate-server-certificates: true
+
+  # KubePrism proxies the API server locally for node components (Cilium, etc.).
+  features:
+    kubePrism:
+      enabled: true
+      port: 7445
+
+    # Required when Cilium socketLB is enabled with hostNamespaceOnly.
+    hostDNS:
+      enabled: true
+      forwardKubeDNSToHost: true
