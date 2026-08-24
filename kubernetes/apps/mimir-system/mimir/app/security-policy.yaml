@@ -35,6 +35,8 @@ spec:
         principal:
           jwt:
             provider: authentik-grafana
+            scopes:
+              - tenant
       - name: m2m-read
         action: Allow
         principal:
