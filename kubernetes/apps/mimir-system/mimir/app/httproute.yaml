@@ -31,7 +31,7 @@ spec:
             type: PathPrefix
             value: /api/v1/upload/block
       backendRefs:
-        - name: mimir-write
+        - name: mimir-app
           port: 8080
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
@@ -56,11 +56,6 @@ spec:
         - path:
             type: PathPrefix
             value: /prometheus
-      backendRefs:
-        - name: mimir-read
-          port: 8080
-    # ruler/alertmanager live on the backend target, not read
-    - matches:
         - path:
             type: PathPrefix
             value: /ruler
@@ -71,5 +66,5 @@ spec:
             type: PathPrefix
             value: /multitenant_alertmanager
       backendRefs:
-        - name: mimir-backend
+        - name: mimir-app
           port: 8080

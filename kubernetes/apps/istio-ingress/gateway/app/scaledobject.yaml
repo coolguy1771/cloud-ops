@@ -10,10 +10,21 @@ spec:
     name: istio-istio
   minReplicaCount: 3
   maxReplicaCount: 6
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 600
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 120
+        scaleUp:
+          stabilizationWindowSeconds: 120
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-app.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(istio_requests_total{job="istio-ingress/istio-ingress-gateway"}[2m]))
         threshold: "200"

@@ -9,10 +9,21 @@ spec:
     name: tempo-distributor
   minReplicaCount: 1
   maxReplicaCount: 3
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 600
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 120
+        scaleUp:
+          stabilizationWindowSeconds: 120
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-app.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(tempo_request_duration_seconds_count{job="observability/distributor"}[2m]))
         threshold: "50"
@@ -26,10 +37,21 @@ spec:
     name: tempo-querier
   minReplicaCount: 1
   maxReplicaCount: 3
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 600
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 120
+        scaleUp:
+          stabilizationWindowSeconds: 120
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-app.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(tempo_request_duration_seconds_count{job="observability/querier"}[2m]))
         threshold: "50"
@@ -43,10 +65,21 @@ spec:
     name: tempo-query-frontend
   minReplicaCount: 1
   maxReplicaCount: 3
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 600
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 120
+        scaleUp:
+          stabilizationWindowSeconds: 120
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-app.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(tempo_request_duration_seconds_count{job="observability/query-frontend"}[2m]))
         threshold: "50"

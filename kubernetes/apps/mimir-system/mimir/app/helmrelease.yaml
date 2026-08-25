@@ -12,11 +12,14 @@ spec:
   timeout: 10m
   values:
     fullnameOverride: mimir
-    # Read-write deployment mode: write (distributor+ingester), read (query-frontend+querier),
-    # backend (store-gateway+compactor+ruler+alertmanager). Replaces the single-binary
-    # (-target=all) Deployment, which couldn't run >1 replica safely on one shared PVC.
+    # Mimir 3.2.0's binary has no write/read/backend meta-targets (that's a
+    # mimir-distributed chart concept, not something the "all" single-binary
+    # build understands) - "-target=all,alertmanager" is the only valid
+    # single-process target. Redundancy instead comes from running 3 full
+    # replicas as peers in the same ring (StatefulSet + per-pod PVC so they
+    # don't fight over one shared volume), each replicated at RF 3.
     controllers:
-      write:
+      mimir:
         type: statefulset
         replicas: 3
         strategy: RollingUpdate
@@ -28,7 +31,7 @@ spec:
               repository: docker.io/grafana/mimir
               tag: 3.2.0
             args:
-              - -target=write
+              - -target=all,alertmanager
               - -config.file=/etc/mimir/mimir.yaml
               - -config.expand-env=true
             envFrom:
@@ -64,137 +67,22 @@ spec:
                 drop: ["ALL"]
             resources:
               requests:
-                cpu: "1"
-                memory: 2Gi
-              limits:
-                cpu: "2"
-                memory: 6Gi
-        statefulset:
-          serviceName: mimir-write-headless
-          volumeClaimTemplates:
-            - name: data
-              size: 50Gi
-              storageClass: hcloud-volumes
-              accessMode: ReadWriteOnce
-              globalMounts:
-                - path: /data
-      read:
-        type: deployment
-        replicas: 2
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
-              repository: docker.io/grafana/mimir
-              tag: 3.2.0
-            args:
-              - -target=read
-              - -config.file=/etc/mimir/mimir.yaml
-              - -config.expand-env=true
-            envFrom:
-              - secretRef:
-                  name: mimir-s3-credentials
-            probes:
-              liveness:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /ready
-                    port: 8080
-                  initialDelaySeconds: 45
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /ready
-                    port: 8080
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-            resources:
-              requests:
-                cpu: "1"
-                memory: 1Gi
-              limits:
                 cpu: "2"
                 memory: 4Gi
-      backend:
-        type: statefulset
-        replicas: 3
-        strategy: RollingUpdate
-        annotations:
-          reloader.stakater.com/auto: "true"
-        containers:
-          app:
-            image:
-              repository: docker.io/grafana/mimir
-              tag: 3.2.0
-            args:
-              - -target=backend,ruler,alertmanager
-              - -config.file=/etc/mimir/mimir.yaml
-              - -config.expand-env=true
-            envFrom:
-              - secretRef:
-                  name: mimir-s3-credentials
-            probes:
-              liveness:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /ready
-                    port: 8080
-                  initialDelaySeconds: 45
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  httpGet:
-                    path: /ready
-                    port: 8080
-                  initialDelaySeconds: 30
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
-            securityContext:
-              allowPrivilegeEscalation: false
-              readOnlyRootFilesystem: false
-              capabilities:
-                drop: ["ALL"]
-            resources:
-              requests:
-                cpu: "1"
-                memory: 2Gi
               limits:
-                cpu: "2"
-                memory: 6Gi
+                cpu: "4"
+                memory: 12Gi
         statefulset:
-          serviceName: mimir-backend-headless
+          serviceName: mimir-headless
           volumeClaimTemplates:
             - name: data
-              size: 30Gi
+              size: 80Gi
               storageClass: hcloud-volumes
               accessMode: ReadWriteOnce
               globalMounts:
                 - path: /data
     service:
-      write:
-        controller: write
+      app:
         primary: true
         ports:
           http:
@@ -202,40 +90,7 @@ spec:
           grpc:
             port: 9095
             protocol: TCP
-      write-headless:
-        controller: write
-        clusterIP: None
-        ports:
-          memberlist:
-            port: 7946
-            protocol: TCP
-      read:
-        controller: read
-        primary: true
-        ports:
-          http:
-            port: 8080
-          grpc:
-            port: 9095
-            protocol: TCP
-      read-headless:
-        controller: read
-        clusterIP: None
-        ports:
-          memberlist:
-            port: 7946
-            protocol: TCP
-      backend:
-        controller: backend
-        primary: true
-        ports:
-          http:
-            port: 8080
-          grpc:
-            port: 9095
-            protocol: TCP
-      backend-headless:
-        controller: backend
+      headless:
         clusterIP: None
         ports:
           memberlist:
@@ -321,9 +176,7 @@ spec:
 
             memberlist:
               join_members:
-                - dns+mimir-write-headless.mimir-system.svc.cluster.local:7946
-                - dns+mimir-read-headless.mimir-system.svc.cluster.local:7946
-                - dns+mimir-backend-headless.mimir-system.svc.cluster.local:7946
+                - dns+mimir-headless.mimir-system.svc.cluster.local:7946
 
             distributor:
               ring:
