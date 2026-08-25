@@ -3,9 +3,15 @@
 apiVersion: telemetry.istio.io/v1
 kind: Telemetry
 metadata:
-  name: mesh-default-tracing
+  name: mesh-default
   namespace: istio-system
 spec:
+  accessLogging:
+    - providers:
+        - name: envoy
+  metrics:
+    - providers:
+        - name: prometheus
   tracing:
     - providers:
         - name: tempo

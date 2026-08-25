@@ -90,6 +90,13 @@ spec:
         login: true
         passwordSecret:
           name: grafana-db
+      - name: alloy_monitoring
+        ensure: present
+        login: true
+        inRoles:
+          - pg_monitor
+        passwordSecret:
+          name: alloy-postgres
 
   plugins:
     - name: barman-cloud.cloudnative-pg.io

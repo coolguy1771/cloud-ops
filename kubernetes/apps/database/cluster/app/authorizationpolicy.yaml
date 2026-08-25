@@ -24,6 +24,7 @@ spec:
       to:
         - operation:
             ports:
+              - "5432"
               - "9187"
               - "9127"
     - from:

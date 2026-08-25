@@ -54,9 +54,11 @@ spec:
       pathNormalization:
         normalization: DECODE_AND_MERGE_SLASHES
       extensionProviders:
+        # Route mesh traces through Alloy so service-graph metrics can be derived,
+        # then forwarded to Tempo (see k8s-monitoring destinations.tempo).
         - name: tempo
           opentelemetry:
-            service: tempo-distributor.observability.svc.cluster.local
+            service: k8s-monitoring-alloy-receiver.observability.svc.cluster.local
             port: 4318
             http:
               path: /v1/traces
