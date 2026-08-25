@@ -54,6 +54,13 @@ spec:
       extraEnvFrom:
         - secretRef:
             name: loki-tigris-credentials
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/region
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: write
     read:
       replicas: 2
       extraArgs:
@@ -61,6 +68,13 @@ spec:
       extraEnvFrom:
         - secretRef:
             name: loki-tigris-credentials
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/region
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: read
     backend:
       replicas: 2
       extraArgs:
@@ -68,6 +82,13 @@ spec:
       extraEnvFrom:
         - secretRef:
             name: loki-tigris-credentials
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/region
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/component: backend
     gateway:
       enabled: false
     serviceMonitor:

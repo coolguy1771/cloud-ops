@@ -6,6 +6,7 @@ resources:
   - ./grafanadatasource.yaml
   - ./grafanadatasource-admin-tenants.yaml
   - ./grafana.yaml
+  - ./poddisruptionbudget.yaml
   - ./istio-dashboards.yaml
   - ./peerauthentication.yaml
   - ./servicemonitor.yaml

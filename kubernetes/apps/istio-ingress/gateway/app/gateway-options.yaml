@@ -1,0 +1,39 @@
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kubernetes-configmap
+# Strategic-merge-patched onto the auto-provisioned gateway Deployment via
+# spec.infrastructure.parametersRef in gateway.yaml. Spreads replicas one per
+# Hetzner region so a single-AZ outage doesn't take down all external traffic.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-options
+data:
+  deployment: |
+    spec:
+      replicas: 3
+      template:
+        spec:
+          affinity:
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      gateway.networking.k8s.io/gateway-name: istio
+                  topologyKey: topology.kubernetes.io/region
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        gateway.networking.k8s.io/gateway-name: istio
+                    topologyKey: kubernetes.io/hostname
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gateway-istio
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-name: istio

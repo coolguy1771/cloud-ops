@@ -28,3 +28,24 @@ spec:
       credentialsName: onepassword-connect-credentials-secret
       sync:
         imageRepository: ghcr.io/1password/connect-sync
+      hpa:
+        enabled: true
+        minReplicas: 2
+        maxReplicas: 3
+      pdb:
+        enabled: true
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: onepassword-connect
+                topologyKey: topology.kubernetes.io/region
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: onepassword-connect
+                topologyKey: kubernetes.io/hostname

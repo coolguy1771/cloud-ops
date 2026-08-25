@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ./externalsecret.yaml
   - ./gateway.yaml
+  - ./gateway-options.yaml
   - ./gateway-requestauthentication.yaml
   - ./authorizationpolicies.yaml
   - ./envoyfilter-hardening.yaml

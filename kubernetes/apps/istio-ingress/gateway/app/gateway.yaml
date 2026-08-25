@@ -12,6 +12,10 @@ spec:
   infrastructure:
     annotations:
       load-balancer.hetzner.cloud/network-zone: eu-central
+    parametersRef:
+      group: ""
+      kind: ConfigMap
+      name: gateway-options
   listeners:
     - name: https
       protocol: HTTPS

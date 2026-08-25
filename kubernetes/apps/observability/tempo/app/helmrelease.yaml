@@ -72,6 +72,25 @@ spec:
             name: tempo-r2-credentials
     memcached:
       replicas: 1
+    # TraceQL metrics ({ } | rate()) need the generator ring + local-blocks.
+    metricsGenerator:
+      enabled: true
+      replicas: 1
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: tempo-r2-credentials
+      config:
+        processor:
+          local_blocks:
+            filter_server_spans: false
+            flush_to_storage: true
+    overrides:
+      defaults:
+        metrics_generator:
+          processors:
+            - local-blocks
     gateway:
       enabled: false
     metaMonitoring:

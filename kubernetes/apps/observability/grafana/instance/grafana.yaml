@@ -71,10 +71,26 @@ spec:
       plugin_admin_enabled: "false"
   deployment:
     spec:
+      replicas: 2
       strategy:
-        type: Recreate
+        type: RollingUpdate
       template:
         spec:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        app: grafana
+                    topologyKey: topology.kubernetes.io/region
+                - weight: 50
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        app: grafana
+                    topologyKey: kubernetes.io/hostname
           containers:
             - name: grafana
               env:
