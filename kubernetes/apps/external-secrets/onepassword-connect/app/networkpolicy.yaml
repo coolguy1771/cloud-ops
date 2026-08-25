@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# Port 15008 is ztunnel HBONE (see flux-operator/networkpolicy.yaml).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: onepassword-connect-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      app: onepassword-connect
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: external-secrets
+            app.kubernetes.io/name: external-secrets
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP

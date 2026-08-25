@@ -1,0 +1,22 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1.json
+# Scoped to this workload only, not the namespace: the other external-secrets-* pods
+# (webhook, cert-controller) may take traffic this wasn't verified against.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: onepassword-connect-allow
+spec:
+  selector:
+    matchLabels:
+      app: onepassword-connect
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/external-secrets/sa/external-secrets
+      to:
+        - operation:
+            ports:
+              - "80"

@@ -31,3 +31,17 @@ releases:
     namespace: observability
     chart: oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds
     version: "31.0.1"
+
+  # Standard gateway.networking.k8s.io CRDs, needed by Istio Gateway/HTTPRoute/waypoint
+  # resources. Previously came bundled with the now-removed envoy-gateway release.
+  - name: gateway-api-crds
+    namespace: istio-system
+    chart: oci://docker.io/envoyproxy/gateway-crds-helm
+    version: "v1.9.0"
+    values:
+      - crds:
+          gatewayAPI:
+            enabled: true
+            channel: standard
+          envoyGateway:
+            enabled: false

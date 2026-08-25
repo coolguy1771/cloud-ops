@@ -1,7 +1,8 @@
 ---
-# Allow authentik ExternalSecret (kubernetes provider) to read the Postgres server CA.
-# SA lives in authentik; Role/RoleBinding are applied into database via Flux targetNamespace
-# so we keep Role+RoleBinding here and the SA in the authentik app.
+# Allow authentik/grafana ExternalSecrets (kubernetes provider) to read the Postgres
+# server CA. SAs live in their own namespaces; Role/RoleBinding are applied into
+# database via Flux targetNamespace so we keep Role+RoleBinding here and the SAs in
+# their respective apps.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
@@ -24,3 +25,6 @@ subjects:
   - kind: ServiceAccount
     name: eso-postgres-ca-reader
     namespace: authentik
+  - kind: ServiceAccount
+    name: eso-postgres-ca-reader
+    namespace: observability

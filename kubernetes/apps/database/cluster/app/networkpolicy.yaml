@@ -1,0 +1,54 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# Source-namespace scoping; port 15008 is ztunnel HBONE (see flux-operator/networkpolicy.yaml).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: database-ingress
+spec:
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: postgres
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: authentik
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: observability
+            app.kubernetes.io/name: alloy-metrics
+      toPorts:
+        - ports:
+            - port: "9187"
+              protocol: TCP
+            - port: "9127"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: observability
+            app: grafana
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+            - port: "8000"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP

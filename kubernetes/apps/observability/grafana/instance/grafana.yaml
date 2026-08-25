@@ -54,6 +54,15 @@ spec:
       role_attribute_path: "'Viewer'"
     auth.anonymous:
       enabled: "false"
+    database:
+      # postgres-rw directly, not postgres-pooler-rw: PgBouncer's transaction pooling
+      # breaks Grafana's server-side prepared statements.
+      type: postgres
+      host: postgres-rw.database.svc.cluster.local:5432
+      name: grafana
+      user: grafana
+      ssl_mode: verify-full
+      ca_cert_path: /etc/ssl/certs/postgres-ca.crt
     metrics:
       enabled: "true"
     news:
@@ -90,6 +99,16 @@ spec:
                   value: https://auth.cloud.witl.xyz/application/o/token/
                 - name: GF_AUTH_GENERIC_OAUTH_API_URL
                   value: https://auth.cloud.witl.xyz/application/o/userinfo/
+                - name: GF_DATABASE_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: grafana-db-password
+                      key: GF_DATABASE_PASSWORD
+              volumeMounts:
+                - name: postgres-ca
+                  mountPath: /etc/ssl/certs/postgres-ca.crt
+                  subPath: ca.crt
+                  readOnly: true
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
@@ -101,9 +120,12 @@ spec:
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
           volumes:
+            # emptyDir: /var/lib/grafana only holds regenerable state now that the DB is on Postgres.
             - name: grafana-data
-              persistentVolumeClaim:
-                claimName: grafana-pvc
+              emptyDir: {}
+            - name: postgres-ca
+              secret:
+                secretName: postgres-ca
   httpRoute:
     spec:
       hostnames:
@@ -117,11 +139,3 @@ spec:
             - name: grafana-service
               port: 3000
   disableDefaultSecurityContext: All
-  persistentVolumeClaim:
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
-      storageClassName: hcloud-volumes
