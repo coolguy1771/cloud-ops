@@ -12,7 +12,7 @@ spec:
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(authentik_main_request_duration_seconds_count{job="authentik-server-metrics"}[2m]))
         threshold: "50"
@@ -31,7 +31,7 @@ spec:
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: max(authentik_tasks_queued)
         threshold: "10"

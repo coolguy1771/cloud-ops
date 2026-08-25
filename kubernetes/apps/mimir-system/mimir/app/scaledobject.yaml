@@ -3,10 +3,11 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: grafana
+  name: mimir-read
 spec:
   scaleTargetRef:
-    name: grafana-deployment
+    name: mimir-read
+    kind: Deployment
   minReplicaCount: 2
   maxReplicaCount: 4
   triggers:
@@ -14,5 +15,5 @@ spec:
       metadata:
         serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
-        query: sum(rate(grafana_http_request_duration_seconds_count{job="grafana-service"}[2m]))
+        query: sum(rate(cortex_request_duration_seconds_count{job="mimir-read"}[2m]))
         threshold: "50"

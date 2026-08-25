@@ -18,7 +18,7 @@ spec:
     uid: prometheus-witl-xyz
     access: proxy
     editable: false
-    url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+    url: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
     jsonData:
       timeInterval: "15s"
       httpMethod: POST
@@ -85,7 +85,7 @@ spec:
     uid: prometheus-icbplays-net
     access: proxy
     editable: false
-    url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+    url: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
     jsonData:
       timeInterval: "15s"
       httpMethod: POST

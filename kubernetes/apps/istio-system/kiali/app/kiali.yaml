@@ -32,8 +32,8 @@ spec:
     istio:
       root_namespace: istio-system
     prometheus:
-      url: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
-      health_check_url: http://mimir.mimir-system.svc.cluster.local:8080/ready
+      url: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
+      health_check_url: http://mimir-read.mimir-system.svc.cluster.local:8080/ready
       custom_headers:
         X-Scope-OrgID: "${mimir_org_id}"
     grafana:

@@ -8,12 +8,12 @@ spec:
   scaleTargetRef:
     name: loki-write
     kind: StatefulSet
-  minReplicaCount: 2
-  maxReplicaCount: 4
+  minReplicaCount: 3
+  maxReplicaCount: 6
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(loki_request_duration_seconds_count{job="observability/loki-write"}[2m]))
         threshold: "50"
@@ -31,7 +31,7 @@ spec:
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(loki_request_duration_seconds_count{job="observability/loki-read"}[2m]))
         threshold: "50"
@@ -49,7 +49,7 @@ spec:
   triggers:
     - type: prometheus
       metadata:
-        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        serverAddress: http://mimir-read.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(loki_request_duration_seconds_count{job="observability/loki-backend"}[2m]))
         threshold: "50"

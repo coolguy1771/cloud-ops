@@ -60,7 +60,7 @@ spec:
           forcepathstyle: true
           insecure: false
     ingester:
-      replicas: 1
+      replicas: 3
       resources:
         requests:
           cpu: 100m
@@ -78,7 +78,7 @@ spec:
         size: 10Gi
         storageClass: hcloud-volumes
       config:
-        replication_factor: 1
+        replication_factor: 3
     distributor:
       autoscaling:
         enabled: true

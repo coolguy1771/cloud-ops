@@ -18,36 +18,104 @@ spec:
     destinations:
       mimir:
         type: prometheus
-        url: http://mimir.mimir-system.svc.cluster.local:8080/api/v1/push
+        url: http://mimir-write.mimir-system.svc.cluster.local:8080/api/v1/push
         secret:
           create: false
           name: k8s-monitoring-mimir-org
         tenantIdKey: tenantId
+      tempo:
+        type: otlp
+        protocol: http
+        url: http://tempo-distributor.observability.svc.cluster.local:4318
+        secret:
+          create: false
+          name: k8s-monitoring-mimir-org
+        tenantIdKey: tenantId
+        metrics:
+          enabled: false
+        logs:
+          enabled: false
+        traces:
+          enabled: true
+        processors:
+          # Trace-derived edges → Mimir; dns resolver avoids API watch load.
+          serviceGraphMetrics:
+            enabled: true
+            destinations:
+              - mimir
+            loadBalancer:
+              resolver: dns
+            collector:
+              controller:
+                replicas: 2
+    dataProcessors:
+      k8s-metadata:
+        type: kubernetesEnrichment
+        podLabels:
+          app: app.kubernetes.io/name
+          component: app.kubernetes.io/component
+          part_of: app.kubernetes.io/part-of
+          instance: app.kubernetes.io/instance
+        namespaceLabels:
+          istio_dataplane: istio.io/dataplane-mode
+    clusterMetrics:
+      enabled: true
+      collector: alloy-metrics
+      dataProcessors:
+        - k8s-metadata
+    hostMetrics:
+      enabled: true
+      collector: alloy-metrics
+      dataProcessors:
+        - k8s-metadata
+      nodeLabels:
+        region: true
+        availabilityZone: true
+        nodeRole: true
+        nodeOS: true
+        nodeArchitecture: true
+        instanceType: true
+      linuxHosts:
+        enabled: true
+    annotationAutodiscovery:
+      enabled: true
+      collector: alloy-metrics
+      dataProcessors:
+        - k8s-metadata
+      nodeLabels:
+        region: true
+        availabilityZone: true
+        nodeRole: true
+        nodeOS: true
+        nodeArchitecture: true
+        instanceType: true
     prometheusOperatorObjects:
       enabled: true
       collector: alloy-metrics
-    integrations:
-      collector: alloy-metrics
-      istio:
-        instances:
-          - name: istio
-            sidecarMetrics:
-              enabled: false
-            istiodMetrics:
-              enabled: true
-              namespace: istio-system
-              serviceName: istiod
-    clusterMetrics:
-      enabled: false
-    hostMetrics:
-      enabled: false
+      dataProcessors:
+        - k8s-metadata
+    applicationObservability:
+      enabled: true
+      collector: alloy-receiver
+      dataProcessors:
+        - k8s-metadata
+      metrics:
+        enabled: false
+      logs:
+        enabled: false
+      traces:
+        enabled: true
+      receivers:
+        otlp:
+          grpc:
+            enabled: true
+            port: 4317
+          http:
+            enabled: true
+            port: 4318
     clusterEvents:
       enabled: false
     podLogsViaKubernetesApi:
-      enabled: false
-    annotationAutodiscovery:
-      enabled: false
-    applicationObservability:
       enabled: false
     autoInstrumentation:
       enabled: false
@@ -55,25 +123,61 @@ spec:
       enabled: false
     selfReporting:
       enabled: false
-    alloy-operator:
-      resources:
-        requests:
-          cpu: 50m
-          memory: 128Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
+    integrations:
+      collector: alloy-metrics
+      istio:
+        instances:
+          - name: istio
+            # Ambient: no sidecars; ztunnel/waypoints scraped via PodMonitors.
+            sidecarMetrics:
+              enabled: false
+            istiodMetrics:
+              enabled: true
+              namespace: istio-system
+              serviceName: istiod
+      cert-manager:
+        instances:
+          - name: cert-manager
+            namespace: cert-manager
+            labelSelectors:
+              app.kubernetes.io/name: cert-manager
+      alloy:
+        instances:
+          - name: alloy
+            labelSelectors:
+              app.kubernetes.io/name:
+                - alloy-metrics
+                - alloy-receiver
+      postgresql:
+        instances:
+          - name: postgres
+            exporter:
+              dataSource:
+                host: postgres-rw.database.svc.cluster.local
+                port: 5432
+                database: postgres
+                sslmode: require
+                auth:
+                  usernameKey: username
+                  passwordKey: password
+            secret:
+              create: false
+              name: alloy-postgres-monitoring
+              namespace: observability
+            logs:
+              enabled: false
+    telemetryServices:
+      kube-state-metrics:
+        deploy: true
+      node-exporter:
+        deploy: true
     collectors:
       alloy-metrics:
         presets:
           - clustered
         alloy:
+          # Required for prometheus.enrich (kubernetesEnrichment on metrics).
+          stabilityLevel: experimental
           clustering:
             portName: tcp
-          resources:
-            requests:
-              cpu: 50m
-              memory: 128Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
+      alloy-receiver: {}
