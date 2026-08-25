@@ -1,0 +1,102 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/networking.istio.io/serviceentry_v1.json
+# Central mesh egress registry. Apps terminate TLS; protocol TLS is passthrough.
+# See docs/superpowers/specs/2026-08-25-mesh-egress-serviceentries-design.md
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: tigris-storage
+spec:
+  hosts:
+    - t3.storage.dev
+  location: MESH_EXTERNAL
+  exportTo:
+    - "*"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: tempo-r2
+spec:
+  hosts:
+    # Substituted by Flux from cloudflare-account-id-secret (same pattern as CNPG ObjectStore).
+    - ${CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com
+  location: MESH_EXTERNAL
+  exportTo:
+    - "*"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: github
+spec:
+  hosts:
+    - github.com
+    - ghcr.io
+  location: MESH_EXTERNAL
+  exportTo:
+    - "*"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: letsencrypt
+spec:
+  hosts:
+    - acme-v02.api.letsencrypt.org
+  location: MESH_EXTERNAL
+  exportTo:
+    - "*"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: cloudflare-api
+spec:
+  hosts:
+    - api.cloudflare.com
+  location: MESH_EXTERNAL
+  exportTo:
+    - "*"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: DNS
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: onepassword
+spec:
+  hosts:
+    - my.1password.com
+    - events.1password.com
+  location: MESH_EXTERNAL
+  exportTo:
+    - "*"
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: DNS
