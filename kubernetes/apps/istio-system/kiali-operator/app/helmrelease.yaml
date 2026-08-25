@@ -29,9 +29,11 @@ spec:
     clusterRoleCreator: true
     allowAllAccessibleNamespaces: true
     resources:
+      # Ansible operator spikes well above 128Mi when workers start; that
+      # OOMKilled every upgrade that applied this limit and stalled Flux.
       requests:
-        cpu: 10m
-        memory: 64Mi
-      limits:
-        cpu: 200m
+        cpu: 50m
         memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
