@@ -1,26 +1,30 @@
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/networking.k8s.io/networkpolicy_v1.json
-# The flux-operator chart's own NetworkPolicy (web.networkPolicy.create) only allows
-# ports 8080/9080. In ambient mesh, pod-to-pod ingress arrives via ztunnel's HBONE
-# tunnel on port 15008 before being decapsulated to the real destination port, so
-# Cilium enforces NetworkPolicy against 15008, not 8080 — silently blackholing all
-# mesh-originated traffic (including Prometheus scrapes) to flux-operator despite the
-# app-level allow rule. NetworkPolicies on the same pod are additive, so this just adds
-# the missing HBONE port. https://istio.io/latest/docs/ambient/install/platform-prerequisites/#cilium
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
+# Replaces the flux-operator chart's own NetworkPolicy (web.networkPolicy.create: false
+# below) with one Cilium-native policy. Port 15008 must stay allowed alongside the real
+# app ports: in ambient mesh, pod-to-pod ingress arrives via ztunnel's HBONE tunnel on
+# 15008 before being decapsulated, and Cilium enforces policy against that outer tunnel
+# port regardless of NetworkPolicy vs CiliumNetworkPolicy — there's no Cilium/Istio
+# integration that makes L4 policy HBONE-aware, per Cilium's own docs:
+# https://docs.cilium.io/en/stable/network/servicemesh/istio/
+# https://ambientmesh.io/docs/security/configure-networkpolicies/
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
 metadata:
-  name: flux-operator-ambient-hbone
+  name: flux-operator-web
 spec:
-  podSelector:
+  endpointSelector:
     matchLabels:
       app.kubernetes.io/instance: flux-operator
       app.kubernetes.io/name: flux-operator
-  policyTypes:
-    - Ingress
   ingress:
-    - from:
-        - namespaceSelector: {}
-      ports:
-        - port: 15008
-          protocol: TCP
+    - fromEndpoints:
+        - {}
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "9080"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP
