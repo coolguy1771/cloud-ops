@@ -23,6 +23,9 @@ spec:
         type: statefulset
         replicas: 3
         strategy: RollingUpdate
+        pod:
+          labels:
+            istio.io/use-waypoint: none
         annotations:
           reloader.stakater.com/auto: "true"
         containers:

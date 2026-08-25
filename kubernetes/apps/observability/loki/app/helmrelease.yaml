@@ -82,6 +82,8 @@ spec:
     write:
       autoscaling:
         enabled: true
+      podLabels:
+        istio.io/use-waypoint: none
       resources:
         requests:
           cpu: 200m
@@ -104,6 +106,8 @@ spec:
     read:
       autoscaling:
         enabled: true
+      podLabels:
+        istio.io/use-waypoint: none
       resources:
         requests:
           cpu: 200m
@@ -126,6 +130,8 @@ spec:
     backend:
       autoscaling:
         enabled: true
+      podLabels:
+        istio.io/use-waypoint: none
       resources:
         requests:
           cpu: 100m
