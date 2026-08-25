@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
-# Create an Authentik OIDC scope mapping that emits a "tenant_id" claim from the
-# client_credentials service account's attributes, and attach it to an OAuth2 provider.
-# Used by external M2M hosts (e.g. delilah) pushing to Mimir/Loki through the gateway,
-# which maps the token's tenant_id claim to X-Scope-OrgID (see
-# kubernetes/apps/istio-ingress/gateway/app/gateway-requestauthentication.yaml).
+# Create a dedicated Authentik service account for one M2M tenant, tag it with a
+# tenant_id attribute, and make sure the OAuth2 provider exposes that attribute as
+# a "tenant_id" scope claim. Used by external M2M hosts (e.g. delilah) pushing to
+# Mimir/Loki through the gateway, which maps the token's tenant_id claim to
+# X-Scope-OrgID (see kubernetes/apps/istio-ingress/gateway/app/gateway-requestauthentication.yaml).
 #
-# With the client_credentials grant, Authentik authenticates against the provider's
-# shared client_secret and auto-creates (or reuses) ONE service account per provider
-# named "ak-<provider_name>-client_credentials" - every client using that provider's
-# secret shares that account and therefore the same tenant_id. That's fine when every
-# client of a given provider belongs to one tenant (e.g. all of icbplays-net's hosts);
-# it does NOT differentiate tenants within a single provider. For that, create a
-# separate OAuth2 provider (and application) per tenant, or a dedicated service account
-# per client with its own app-password token as client_secret.
+# Why a dedicated account per tenant: with the client_credentials grant, authenticating
+# with the PROVIDER's own client_secret always resolves to one shared, auto-generated
+# account named "ak-<provider_name>-client_credentials" - fine for a single tenant, but
+# every client sharing that secret would get the same tenant_id. A provider can only
+# have one client_secret, so multiple tenants under the same provider instead each get
+# their own service account + app-password token, and authenticate with:
+#   client_id     = the provider's own client_id (shared, same for every tenant)
+#   client_secret = base64("<service-account-username>:<app-password-token>")
+# Authentik resolves the account from the decoded client_secret, not from client_id.
 #
 # Prerequisites:
 #   export AUTHENTIK_TOKEN=...   # Intent: API Token
 #
 # Usage:
-#   ./kubernetes/apps/authservice/scripts/setup-authentik-tenant-claim.sh --tenant-id icbplays-net
-#   ./kubernetes/apps/authservice/scripts/setup-authentik-tenant-claim.sh --tenant-id icbplays-net --provider observability-m2m
-#   ./kubernetes/apps/authservice/scripts/setup-authentik-tenant-claim.sh --tenant-id icbplays-net --dry-run
+#   ./kubernetes/apps/authservice/scripts/setup-authentik-tenant-claim.sh --tenant-id icbplays-net --name m2m-icbplays-net
+#   ./kubernetes/apps/authservice/scripts/setup-authentik-tenant-claim.sh --tenant-id icbplays-net --name m2m-icbplays-net --provider "Observability M2M"
+#   ./kubernetes/apps/authservice/scripts/setup-authentik-tenant-claim.sh --tenant-id icbplays-net --name m2m-icbplays-net --dry-run
 
 set -euo pipefail
 
@@ -29,7 +30,7 @@ PROVIDER_NAME="${PROVIDER_NAME:-Observability M2M}"
 MAPPING_NAME="${MAPPING_NAME:-OAuth2 tenant_id (from service account attribute)}"
 SCOPE_NAME="${SCOPE_NAME:-tenant_id}"
 TENANT_ID=""
-SERVICE_ACCOUNT=""
+SA_NAME=""
 DRY_RUN=0
 ATTACH=1
 
@@ -44,25 +45,25 @@ for i in "${!args[@]}"; do
     --no-attach) ATTACH=0 ;;
     --provider=*) PROVIDER_NAME="${args[$i]#--provider=}" ;;
     --tenant-id=*) TENANT_ID="${args[$i]#--tenant-id=}" ;;
+    --name=*) SA_NAME="${args[$i]#--name=}" ;;
     --provider)
-      TENANT_ID_NEXT=0
       [[ -n "${args[$((i + 1))]:-}" ]] && PROVIDER_NAME="${args[$((i + 1))]}"
       ;;
     --tenant-id)
       [[ -n "${args[$((i + 1))]:-}" ]] && TENANT_ID="${args[$((i + 1))]}"
       ;;
-    --service-account=*) SERVICE_ACCOUNT="${args[$i]#--service-account=}" ;;
-    --service-account)
-      [[ -n "${args[$((i + 1))]:-}" ]] && SERVICE_ACCOUNT="${args[$((i + 1))]}"
+    --name)
+      [[ -n "${args[$((i + 1))]:-}" ]] && SA_NAME="${args[$((i + 1))]}"
       ;;
     -h|--help)
-      echo "Usage: $0 --tenant-id TENANT [--provider NAME] [--service-account USERNAME] [--dry-run] [--no-attach]"
+      echo "Usage: $0 --tenant-id TENANT --name SERVICE_ACCOUNT_NAME [--provider NAME] [--dry-run] [--no-attach]"
       exit 0
       ;;
   esac
 done
 
 [[ -n "$TENANT_ID" ]] || die "set --tenant-id (e.g. --tenant-id icbplays-net)"
+[[ -n "$SA_NAME" ]] || die "set --name for the dedicated service account (e.g. --name m2m-icbplays-net)"
 [[ -n "${AUTHENTIK_TOKEN:-}" ]] || die "set AUTHENTIK_TOKEN (Intent: API Token)"
 AUTHENTIK_TOKEN="$(printf '%s' "${AUTHENTIK_TOKEN}" | tr -d '\r\n ')"
 
@@ -102,38 +103,38 @@ provider="$(api GET "/providers/oauth2/?page_size=100" \
   | jq -c --arg n "$PROVIDER_NAME" '.results[] | select(.name == $n)')"
 [[ -n "$provider" ]] || die "OAuth2 provider '${PROVIDER_NAME}' not found"
 provider_pk="$(echo "$provider" | jq -r .pk)"
-log "Provider: ${PROVIDER_NAME} (pk=${provider_pk})"
+provider_client_id="$(echo "$provider" | jq -r .client_id)"
+log "Provider: ${PROVIDER_NAME} (pk=${provider_pk}, client_id=${provider_client_id})"
 
-if [[ -n "$SERVICE_ACCOUNT" ]]; then
-  sa="$(api GET "/core/users/?username=$(urlencode "$SERVICE_ACCOUNT")" | jq -c '.results[0] // empty')"
-  [[ -n "$sa" ]] || die "no user found with username '${SERVICE_ACCOUNT}'"
+existing="$(api GET "/core/users/?username=$(urlencode "$SA_NAME")" | jq -c '.results[0] // empty')"
+app_password=""
+if [[ -n "$existing" ]]; then
+  sa_pk="$(echo "$existing" | jq -r .pk)"
+  log "Service account '${SA_NAME}' already exists (pk=${sa_pk}) - not recreating."
+  log "Its app-password token isn't retrievable after creation; use the Authentik UI"
+  log "(Directory > Tokens and App passwords) to view or rotate it if you've lost it."
+  sa="$existing"
 else
-  # The client_credentials service account is auto-named ak-<provider_name>-client_credentials
-  # using the provider's display name verbatim (spaces and case intact, no slugification) -
-  # search broadly for every auto-generated client_credentials account and match against it.
-  candidates="$(api GET "/core/users/?search=$(urlencode "client_credentials")&page_size=100")"
-  sa="$(echo "$candidates" | jq -c --arg p "$PROVIDER_NAME" \
-    '[.results[] | select(.username | test("client_credentials$"))] as $all
-     | ($all | map(select(.username | ascii_downcase | contains($p | ascii_downcase)))) as $matched
-     | if ($matched | length) == 1 then $matched[0]
-       elif ($all | length) == 1 then $all[0]
-       else empty end')"
-  if [[ -z "$sa" ]]; then
-    log "Could not uniquely identify the service account. Candidates found:"
-    echo "$candidates" | jq -r '.results[] | select(.username | test("client_credentials$")) | "  " + .username' >&2
-    die "pass --service-account USERNAME to pick one (or run the provider once with its client_secret first so authentik auto-creates it)."
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "[dry-run] would create service account '${SA_NAME}'"
+    sa_pk="dry-run-sa"
+    sa='{}'
+  else
+    created="$(api POST "/core/users/service_account/" "$(jq -n --arg name "$SA_NAME" \
+      '{name: $name, create_group: false, expiring: false}')")"
+    sa_pk="$(echo "$created" | jq -r .user_pk)"
+    app_password="$(echo "$created" | jq -r .token)"
+    log "Created service account '${SA_NAME}' (pk=${sa_pk})"
+    sa="$(api GET "/core/users/${sa_pk}/")"
   fi
 fi
-sa_pk="$(echo "$sa" | jq -r .pk)"
-sa_username="$(echo "$sa" | jq -r .username)"
-log "Service account: ${sa_username} (pk=${sa_pk})"
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
-  log "[dry-run] would set attributes.tenant_id=${TENANT_ID} on ${sa_username}"
+  log "[dry-run] would set attributes.tenant_id=${TENANT_ID} on ${SA_NAME}"
 else
   merged_attrs="$(echo "$sa" | jq -c --arg t "$TENANT_ID" '(.attributes // {}) + {tenant_id: $t}')"
   api PATCH "/core/users/${sa_pk}/" "$(jq -n --argjson attrs "$merged_attrs" '{attributes: $attrs}')" >/dev/null
-  log "Set attributes.tenant_id=${TENANT_ID} on ${sa_username}"
+  log "Set attributes.tenant_id=${TENANT_ID} on ${SA_NAME}"
 fi
 
 TENANT_EXPR=$'return {\n  "tenant_id": request.user.attributes.get("tenant_id"),\n}'
@@ -163,24 +164,31 @@ else
   log "Scope mapping ${SCOPE_NAME} already exists pk=${mapping_pk}"
 fi
 
-if [[ "$ATTACH" -eq 0 ]]; then
-  log "Done (not attaching to provider)."
-  exit 0
+if [[ "$ATTACH" -eq 1 ]]; then
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    log "[dry-run] would attach ${SCOPE_NAME} mapping to provider ${PROVIDER_NAME}"
+  else
+    maps="$(echo "$provider" | jq -c --arg m "$mapping_pk" \
+      '((.property_mappings // []) + [$m]) | unique')"
+    api PATCH "/providers/oauth2/${provider_pk}/" "$(jq -n --argjson maps "$maps" \
+      '{property_mappings: $maps}')" >/dev/null
+    log "Attached ${SCOPE_NAME} mapping to provider ${PROVIDER_NAME} (pk=${provider_pk})"
+  fi
 fi
 
-if [[ "$DRY_RUN" -eq 1 ]]; then
-  log "[dry-run] would attach ${SCOPE_NAME} mapping to provider ${PROVIDER_NAME}"
-  exit 0
-fi
-
-maps="$(echo "$provider" | jq -c --arg m "$mapping_pk" \
-  '((.property_mappings // []) + [$m]) | unique')"
-api PATCH "/providers/oauth2/${provider_pk}/" "$(jq -n --argjson maps "$maps" \
-  '{property_mappings: $maps}')" >/dev/null
-log "Attached ${SCOPE_NAME} mapping to provider ${PROVIDER_NAME} (pk=${provider_pk})"
 log ""
-log "Clients authenticating against this provider must now request scope '${SCOPE_NAME}'"
-log "alongside their other scopes, e.g. scopes = [\"mimir:write\", \"loki:write\", \"${SCOPE_NAME}\"]."
-log "Every client using this provider's shared client_secret shares this service account,"
-log "so they all get tenant_id=${TENANT_ID}. Use a separate provider for a different tenant."
+if [[ -n "$app_password" ]]; then
+  client_secret="$(printf '%s:%s' "$SA_NAME" "$app_password" | base64 | tr -d '\n')"
+  log "client_id:     ${provider_client_id}"
+  log "client_secret: ${client_secret}"
+  log "(This is the only time the app-password token is shown - save client_secret now.)"
+else
+  log "client_id: ${provider_client_id}"
+  log "client_secret: base64(\"${SA_NAME}:<app-password-token>\") - retrieve the token from"
+  log "the Authentik UI since this account already existed."
+fi
+log ""
+log "Configure the host's oauth2 block with the client_id/client_secret above and"
+log "scopes = [\"mimir:write\", \"loki:write\", \"${SCOPE_NAME}\"] (token_url stays the shared"
+log "https://auth.cloud.witl.xyz/application/o/token/)."
 log "Done."
