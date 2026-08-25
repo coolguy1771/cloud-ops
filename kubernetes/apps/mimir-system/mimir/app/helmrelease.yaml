@@ -9,12 +9,7 @@ spec:
     kind: OCIRepository
     name: mimir
   interval: 1h
-  # Cold start loads blocks from object storage; 10m was timing out and
-  # triggering Helm rollbacks that flip-flopped STS <-> Deployment.
-  timeout: 30m
-  upgrade:
-    remediation:
-      remediateLastFailure: false
+  timeout: 10m
   values:
     fullnameOverride: mimir
     # Mimir 3.2.0's binary has no write/read/backend meta-targets (that's a
