@@ -19,9 +19,9 @@ spec:
       retries: 3
   values:
     profile: ambient
-    autoscaleEnabled: true
-    autoscaleMin: 2
-    autoscaleMax: 5
+    # Autoscaling via KEDA (istiod-scaledobject.yaml); replicaCount stays unset so
+    # the chart omits spec.replicas and KEDA's HPA owns it.
+    autoscaleEnabled: false
     rollingMaxUnavailable: 1
     affinity:
       podAntiAffinity:

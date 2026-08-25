@@ -1,0 +1,18 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/keda.sh/scaledobject_v1alpha1.json
+# CPU only: the chart sets a memory limit but no memory request, and KEDA's memory
+# Utilization trigger needs a request to compute percentage against.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: onepassword-connect
+spec:
+  scaleTargetRef:
+    name: onepassword-connect
+  minReplicaCount: 2
+  maxReplicaCount: 3
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "50"

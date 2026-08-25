@@ -16,6 +16,16 @@ spec:
     cleanupOnFail: true
     remediation:
       retries: 3
+  # Chart always renders spec.replicas; strip it so KEDA's HPA owns replica count.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: onepassword-connect
+            patch: |
+              - op: remove
+                path: /spec/replicas
   values:
     connect:
       annotations:
@@ -28,10 +38,11 @@ spec:
       credentialsName: onepassword-connect-credentials-secret
       sync:
         imageRepository: ghcr.io/1password/connect-sync
+        resources:
+          requests:
+            cpu: 100m
       hpa:
-        enabled: true
-        minReplicas: 2
-        maxReplicas: 3
+        enabled: false
       pdb:
         enabled: true
       affinity:
