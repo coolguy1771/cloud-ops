@@ -16,4 +16,4 @@ spec:
       config:
         baseURL: "https://flux-operator.cloud.witl.xyz"
       networkPolicy:
-        create: true
+        create: false
