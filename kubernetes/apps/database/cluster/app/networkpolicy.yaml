@@ -38,6 +38,16 @@ spec:
               protocol: TCP
     - fromEndpoints:
         - matchLabels:
+            io.kubernetes.pod.namespace: observability
+            app: grafana
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
             cnpg.io/cluster: postgres
       toPorts:
         - ports:

@@ -13,6 +13,7 @@ resources:
   - ./pooler-rw.yaml
   - ./pooler-ro.yaml
   - ./database-authentik.yaml
+  - ./database-grafana.yaml
   - ./podmonitor.yaml
   - ./prometheusrule.yaml
   - ./grafanadashboard.yaml

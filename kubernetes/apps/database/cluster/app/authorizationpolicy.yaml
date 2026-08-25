@@ -3,8 +3,9 @@
 # Identity-based enforcement (paired with networkpolicy.yaml's coarser L3/L4 rules).
 # Presence of an ALLOW policy flips this namespace to deny-by-default for anything not
 # listed here. Principals/ports based on observed traffic (ztunnel access logs, 6h window):
-# authentik is the only application consumer; alloy scrapes exporters; postgres/poolers
-# talk to each other for replication, the CNPG instance-manager API, and pooler backends.
+# authentik and grafana are the application consumers; alloy scrapes exporters;
+# postgres/poolers talk to each other for replication, the CNPG instance-manager API,
+# and pooler backends.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -30,6 +31,14 @@ spec:
             ports:
               - "9187"
               - "9127"
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/observability/sa/grafana-sa
+      to:
+        - operation:
+            ports:
+              - "5432"
     - from:
         - source:
             principals:

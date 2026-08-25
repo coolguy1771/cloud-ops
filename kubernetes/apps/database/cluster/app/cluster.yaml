@@ -84,6 +84,11 @@ spec:
         login: true
         passwordSecret:
           name: authentik-db
+      - name: grafana
+        ensure: present
+        login: true
+        passwordSecret:
+          name: grafana-db
 
   plugins:
     - name: barman-cloud.cloudnative-pg.io
