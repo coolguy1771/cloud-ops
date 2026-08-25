@@ -1,5 +1,7 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/requestauthentication_v1.json
+# JWT validation on the shared Gateway. Opaque Authentik API tokens on
+# auth.cloud.witl.xyz are excluded via envoyfilter-skip-jwt-authentik.yaml.
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication
 metadata:
