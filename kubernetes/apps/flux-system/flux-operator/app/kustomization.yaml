@@ -7,3 +7,4 @@ resources:
   - ./ocirepository.yaml
   - ./httproute.yaml
   - ./helmrelease.yaml
+  - ./networkpolicy.yaml

@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/networking.k8s.io/networkpolicy_v1.json
+# The flux-operator chart's own NetworkPolicy (web.networkPolicy.create) only allows
+# ports 8080/9080. In ambient mesh, pod-to-pod ingress arrives via ztunnel's HBONE
+# tunnel on port 15008 before being decapsulated to the real destination port, so
+# Cilium enforces NetworkPolicy against 15008, not 8080 — silently blackholing all
+# mesh-originated traffic (including Prometheus scrapes) to flux-operator despite the
+# app-level allow rule. NetworkPolicies on the same pod are additive, so this just adds
+# the missing HBONE port. https://istio.io/latest/docs/ambient/install/platform-prerequisites/#cilium
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: flux-operator-ambient-hbone
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: flux-operator
+      app.kubernetes.io/name: flux-operator
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - port: 15008
+          protocol: TCP
