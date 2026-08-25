@@ -66,8 +66,10 @@ spec:
               capabilities:
                 drop: ["ALL"]
             resources:
+              # ~4 CPU / ~7Gi workers: 2 CPU requests left no room for RF=3
+              # once other packs filled remaining nodes.
               requests:
-                cpu: "2"
+                cpu: "1500m"
                 memory: 2Gi
               limits:
                 cpu: "4"
