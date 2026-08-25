@@ -8,6 +8,8 @@ spec:
   dependsOn:
     - name: mesh-egress-secrets
       namespace: network
+    - name: istio
+      namespace: istio-system
   interval: 1h
   path: ./kubernetes/apps/network/mesh-egress/app
   postBuild:

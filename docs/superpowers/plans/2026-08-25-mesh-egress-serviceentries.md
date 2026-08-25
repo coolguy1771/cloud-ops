@@ -12,7 +12,7 @@
 
 ---
 
-### Task 1: Add mesh-egress manifests
+## Task 1: Add mesh-egress manifests
 
 **Files:**
 - Create: `kubernetes/apps/network/mesh-egress/app/serviceentries.yaml`
@@ -25,7 +25,7 @@
 - [ ] **Step 3: Create Flux `ks.yaml`** (`name: mesh-egress`, path `./kubernetes/apps/network/mesh-egress/app`, `targetNamespace: network`, prune true, source `flux-system`)
 - [ ] **Step 4: Wire into** `kubernetes/apps/network/kustomization.yaml` as `./mesh-egress/ks.yaml`
 
-### Task 2: Verify
+## Task 2: Verify
 
 - [ ] **Step 1:** `kubectl kustomize kubernetes/apps/network/mesh-egress/app` shows six ServiceEntries
 - [ ] **Step 2:** Optionally apply/wait for Flux if cluster context available; `kubectl -n network get serviceentry`

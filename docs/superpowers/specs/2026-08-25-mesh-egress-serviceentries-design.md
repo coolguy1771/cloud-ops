@@ -21,7 +21,7 @@ Add Istio `ServiceEntry` resources for cluster workloads' known outbound hosts s
 
 Central catalog under the existing ambient `network` namespace:
 
-```
+```text
 kubernetes/apps/network/mesh-egress/
   secrets/
     kustomization.yaml
