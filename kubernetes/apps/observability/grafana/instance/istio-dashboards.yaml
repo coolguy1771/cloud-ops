@@ -1,5 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
+# Istio dashboards use the in-cluster witl-xyz tenant (cloud-ops mesh metrics).
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -11,13 +12,12 @@ spec:
       grafana.internal/instance: grafana
   folder: Istio
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: Prometheus (witl-xyz)
       inputName: DS_PROMETHEUS
   grafanaCom:
     id: 7639
     revision: 317
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -29,13 +29,12 @@ spec:
       grafana.internal/instance: grafana
   folder: Istio
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: Prometheus (witl-xyz)
       inputName: DS_PROMETHEUS
-  grafanaCom:
-    id: 7636
-    revision: 316
+  configMapRef:
+    name: istio-service-dashboard
+    key: istio-service-dashboard.json
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -47,13 +46,12 @@ spec:
       grafana.internal/instance: grafana
   folder: Istio
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: Prometheus (witl-xyz)
       inputName: DS_PROMETHEUS
-  grafanaCom:
-    id: 7630
-    revision: 317
+  configMapRef:
+    name: istio-workload-dashboard
+    key: istio-workload-dashboard.json
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -65,13 +63,12 @@ spec:
       grafana.internal/instance: grafana
   folder: Istio
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: Prometheus (witl-xyz)
       inputName: DS_PROMETHEUS
   grafanaCom:
     id: 7645
     revision: 316
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -83,13 +80,12 @@ spec:
       grafana.internal/instance: grafana
   folder: Istio
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: Prometheus (witl-xyz)
       inputName: DS_PROMETHEUS
   grafanaCom:
     id: 11829
     revision: 316
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -101,13 +97,12 @@ spec:
       grafana.internal/instance: grafana
   folder: Istio
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: Prometheus (witl-xyz)
       inputName: DS_PROMETHEUS
   grafanaCom:
     id: 13277
     revision: 274
 ---
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadashboard_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDashboard
 metadata:
@@ -119,7 +114,7 @@ spec:
       grafana.internal/instance: grafana
   folder: Istio
   datasources:
-    - datasourceName: prometheus
+    - datasourceName: Prometheus (witl-xyz)
       inputName: DS_PROMETHEUS
   grafanaCom:
     id: 21306

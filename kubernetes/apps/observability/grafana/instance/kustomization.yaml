@@ -10,3 +10,14 @@ resources:
   - ./istio-dashboards.yaml
   - ./peerauthentication.yaml
   - ./servicemonitor.yaml
+
+configMapGenerator:
+  - name: istio-workload-dashboard
+    files:
+      - dashboards/istio-workload-dashboard.json
+  - name: istio-service-dashboard
+    files:
+      - dashboards/istio-service-dashboard.json
+
+generatorOptions:
+  disableNameSuffixHash: true
