@@ -1,5 +1,7 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/requestauthentication_v1.json
+# JWT validation on the shared Gateway. Opaque Authentik API tokens on
+# auth.cloud.witl.xyz are excluded via envoyfilter-skip-jwt-authentik.yaml.
 apiVersion: security.istio.io/v1
 kind: RequestAuthentication
 metadata:
@@ -25,3 +27,9 @@ spec:
       outputClaimToHeaders:
         - header: X-Scope-OrgID
           claim: tenant_id
+    - issuer: "https://auth.cloud.witl.xyz/application/o/hubble/"
+      jwksUri: "https://auth.cloud.witl.xyz/application/o/hubble/jwks/"
+      # Optional: validate a client-supplied Hubble JWT if present. Browser
+      # sessions authenticate via authservice CUSTOM (cookies); injected ID
+      # tokens are not re-processed by jwt_authn on the same request.
+      forwardOriginalToken: true

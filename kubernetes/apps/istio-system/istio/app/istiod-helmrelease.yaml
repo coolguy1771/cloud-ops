@@ -56,6 +56,10 @@ spec:
               timeout: 10s
               headers:
                 X-Scope-OrgID: "${ORG_ID}"
+        - name: authservice-grpc
+          envoyExtAuthzGrpc:
+            service: authservice.authservice.svc.cluster.local
+            port: "10003"
     pilot:
       env:
         PILOT_ENABLE_AMBIENT_CONTROLLERS: "true"

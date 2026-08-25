@@ -103,7 +103,7 @@ spec:
     hubble:
       enabled: true
       relay:
-        enabled: false
+        enabled: true
         replicas: 1
         resources:
           requests:
@@ -115,7 +115,7 @@ spec:
         service:
           type: ClusterIP
       ui:
-        enabled: false
+        enabled: true
         replicas: 1
         resources:
           requests:

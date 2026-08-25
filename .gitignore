@@ -4,3 +4,5 @@
 .claude/
 .cursor/
 hcloud-amd64.raw.xz
+kubernetes/apps/authservice/scripts/setup-authentik-hubble.sh
+kubernetes/apps/authservice/scripts/setup-authentik-groups-scope.sh

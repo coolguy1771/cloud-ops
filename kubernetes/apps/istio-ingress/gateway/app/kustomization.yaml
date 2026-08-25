@@ -7,4 +7,5 @@ resources:
   - ./gateway-requestauthentication.yaml
   - ./authorizationpolicies.yaml
   - ./envoyfilter-hardening.yaml
+  - ./envoyfilter-skip-jwt-authentik.yaml
   - ./podmonitor.yaml
