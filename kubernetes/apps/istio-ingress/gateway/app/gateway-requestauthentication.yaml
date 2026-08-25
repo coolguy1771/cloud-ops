@@ -29,4 +29,7 @@ spec:
           claim: tenant_id
     - issuer: "https://auth.cloud.witl.xyz/application/o/hubble/"
       jwksUri: "https://auth.cloud.witl.xyz/application/o/hubble/jwks/"
+      # Optional: validate a client-supplied Hubble JWT if present. Browser
+      # sessions authenticate via authservice CUSTOM (cookies); injected ID
+      # tokens are not re-processed by jwt_authn on the same request.
       forwardOriginalToken: true

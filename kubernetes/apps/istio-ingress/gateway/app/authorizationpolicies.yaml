@@ -198,7 +198,10 @@ spec:
         - key: request.auth.claims[scope]
           values: ["mimir:read"]
 ---
-# Hubble UI: OIDC via authservice (CUSTOM), then require Authentik group cloud-ops-admin.
+# Hubble UI: OIDC session via authservice (CUSTOM). Group gate is Authentik's
+# application policy (cloud-ops-admin). Do not require request.auth.claims here:
+# jwt_authn runs before ext_authz header injection, so claims from the
+# Authservice-injected ID token are not available to ALLOW on the same request.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -229,17 +232,7 @@ spec:
       name: istio
   action: ALLOW
   rules:
-    # OIDC callback / logout handled by authservice before JWT exists.
-    - to:
-        - operation:
-            hosts: ["hubble.cloud.witl.xyz"]
-            paths: ["/callback", "/callback*", "/authservice_logout", "/authservice_logout*"]
     - to:
         - operation:
             hosts: ["hubble.cloud.witl.xyz"]
             paths: ["/", "/*"]
-      when:
-        - key: request.auth.claims[iss]
-          values: ["https://auth.cloud.witl.xyz/application/o/hubble/"]
-        - key: request.auth.claims[groups]
-          values: ["cloud-ops-admin"]

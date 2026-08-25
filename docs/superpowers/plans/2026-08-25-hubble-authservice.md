@@ -21,8 +21,8 @@
 ## Task 3: Wire Istio Gateway
 
 - [x] istiod `extensionProviders` entry `authservice-grpc`
-- [x] RequestAuthentication JWT rule for hubble issuer
-- [x] AuthorizationPolicy CUSTOM (host hubble) + ALLOW with groups claim (callback paths exempt)
+- [x] Optional RequestAuthentication JWT rule for hubble issuer (client-supplied JWT)
+- [x] AuthorizationPolicy CUSTOM (host hubble) + ALLOW for host (group gate in Authentik)
 
 ## Task 4: Authentik / secrets
 
