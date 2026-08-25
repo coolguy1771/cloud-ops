@@ -55,8 +55,14 @@ spec:
     auth.anonymous:
       enabled: "false"
     database:
+      # Direct to the CNPG primary service, not postgres-pooler-rw: PgBouncer's
+      # transaction pooling mode breaks Grafana's server-side prepared statements
+      # (queries can land on a different backend connection mid-session), causing
+      # silent "prepared statement does not exist" failures across alerting, auth
+      # token cleanup, secret migration, and usage stats. Grafana keeps its own
+      # connection pool, so it doesn't need PgBouncer in front of it anyway.
       type: postgres
-      host: postgres-pooler-rw.database.svc.cluster.local:5432
+      host: postgres-rw.database.svc.cluster.local:5432
       name: grafana
       user: grafana
       ssl_mode: verify-full
