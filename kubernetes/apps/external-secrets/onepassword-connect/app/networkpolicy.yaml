@@ -20,3 +20,13 @@ spec:
               protocol: TCP
             - port: "15008"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: observability
+            app.kubernetes.io/name: alloy-metrics
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "15008"
+              protocol: TCP
