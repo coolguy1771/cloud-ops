@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
-# Create a dedicated Authentik service account for one M2M tenant, tag it with a
-# tenant_id attribute, and make sure the OAuth2 provider exposes that attribute as
-# a "tenant_id" scope claim. Used by external M2M hosts (e.g. delilah) pushing to
-# Mimir/Loki through the gateway, which maps the token's tenant_id claim to
-# X-Scope-OrgID (see kubernetes/apps/istio-ingress/gateway/app/gateway-requestauthentication.yaml).
+# Create a dedicated Authentik service account for one M2M tenant, tagged with the
+# observability_tenant attribute the existing "Observability tenant_id" scope mapping
+# already reads (scope_name "tenant", expression:
+#   return {"tenant_id": request.user.attributes.get("observability_tenant", "witl-xyz")}
+# ). That mapping is already attached to the Observability M2M provider and already used
+# in production by home-ops (cluster "kyak"), so this script does NOT create or attach
+# any new scope mapping - it only provisions the account. The gateway maps the resulting
+# tenant_id claim to X-Scope-OrgID (see
+# kubernetes/apps/istio-ingress/gateway/app/gateway-requestauthentication.yaml).
 #
 # Why a dedicated account per tenant: with the client_credentials grant, authenticating
 # with the PROVIDER's own client_secret always resolves to one shared, auto-generated
-# account named "ak-<provider_name>-client_credentials" - fine for a single tenant, but
-# every client sharing that secret would get the same tenant_id. A provider can only
-# have one client_secret, so multiple tenants under the same provider instead each get
-# their own service account + app-password token, and authenticate with:
+# account named "ak-<provider_name>-client_credentials" with no observability_tenant
+# attribute set, which is why that shared account (and anything using it) falls through
+# to the mapping's "witl-xyz" default. A provider can only have one client_secret, so a
+# second tenant needs its own service account + app-password token, authenticating with:
 #   client_id     = the provider's own client_id (shared, same for every tenant)
 #   client_secret = base64("<service-account-username>:<app-password-token>")
 # Authentik resolves the account from the decoded client_secret, not from client_id.
@@ -27,12 +31,10 @@ set -euo pipefail
 
 AUTHENTIK_URL="${AUTHENTIK_URL:-https://auth.cloud.witl.xyz}"
 PROVIDER_NAME="${PROVIDER_NAME:-Observability M2M}"
-MAPPING_NAME="${MAPPING_NAME:-OAuth2 tenant_id (from service account attribute)}"
-SCOPE_NAME="${SCOPE_NAME:-tenant_id}"
+ATTRIBUTE_KEY="observability_tenant"
 TENANT_ID=""
 SA_NAME=""
 DRY_RUN=0
-ATTACH=1
 
 die() { echo "error: $*" >&2; exit 1; }
 log() { echo "$*"; }
@@ -42,7 +44,6 @@ args=("$@")
 for i in "${!args[@]}"; do
   case "${args[$i]}" in
     --dry-run) DRY_RUN=1 ;;
-    --no-attach) ATTACH=0 ;;
     --provider=*) PROVIDER_NAME="${args[$i]#--provider=}" ;;
     --tenant-id=*) TENANT_ID="${args[$i]#--tenant-id=}" ;;
     --name=*) SA_NAME="${args[$i]#--name=}" ;;
@@ -56,7 +57,7 @@ for i in "${!args[@]}"; do
       [[ -n "${args[$((i + 1))]:-}" ]] && SA_NAME="${args[$((i + 1))]}"
       ;;
     -h|--help)
-      echo "Usage: $0 --tenant-id TENANT --name SERVICE_ACCOUNT_NAME [--provider NAME] [--dry-run] [--no-attach]"
+      echo "Usage: $0 --tenant-id TENANT --name SERVICE_ACCOUNT_NAME [--provider NAME] [--dry-run]"
       exit 0
       ;;
   esac
@@ -130,50 +131,11 @@ else
 fi
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
-  log "[dry-run] would set attributes.tenant_id=${TENANT_ID} on ${SA_NAME}"
+  log "[dry-run] would set attributes.${ATTRIBUTE_KEY}=${TENANT_ID} on ${SA_NAME}"
 else
-  merged_attrs="$(echo "$sa" | jq -c --arg t "$TENANT_ID" '(.attributes // {}) + {tenant_id: $t}')"
+  merged_attrs="$(echo "$sa" | jq -c --arg k "$ATTRIBUTE_KEY" --arg t "$TENANT_ID" '(.attributes // {}) + {($k): $t}')"
   api PATCH "/core/users/${sa_pk}/" "$(jq -n --argjson attrs "$merged_attrs" '{attributes: $attrs}')" >/dev/null
-  log "Set attributes.tenant_id=${TENANT_ID} on ${SA_NAME}"
-fi
-
-TENANT_EXPR=$'return {\n  "tenant_id": request.user.attributes.get("tenant_id"),\n}'
-
-scope_maps="$(api GET "/propertymappings/provider/scope/?page_size=100")"
-mapping_pk="$(echo "$scope_maps" | jq -r --arg n "$MAPPING_NAME" \
-  '.results[] | select(.scope_name == "'"$SCOPE_NAME"'" and .name == $n) | .pk' | head -1)"
-if [[ -z "$mapping_pk" ]]; then
-  mapping_pk="$(echo "$scope_maps" | jq -r --arg s "$SCOPE_NAME" \
-    '.results[] | select(.scope_name == $s) | .pk' | head -1)"
-fi
-
-if [[ -z "$mapping_pk" ]]; then
-  body="$(jq -n \
-    --arg name "$MAPPING_NAME" \
-    --arg scope "$SCOPE_NAME" \
-    --arg expr "$TENANT_EXPR" \
-    '{name: $name, scope_name: $scope, expression: $expr}')"
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "[dry-run] would create scope mapping ${MAPPING_NAME} (scope_name=${SCOPE_NAME})"
-    mapping_pk="dry-run-tenant-id"
-  else
-    mapping_pk="$(api POST "/propertymappings/provider/scope/" "$body" | jq -r .pk)"
-    log "Created scope mapping pk=${mapping_pk}"
-  fi
-else
-  log "Scope mapping ${SCOPE_NAME} already exists pk=${mapping_pk}"
-fi
-
-if [[ "$ATTACH" -eq 1 ]]; then
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "[dry-run] would attach ${SCOPE_NAME} mapping to provider ${PROVIDER_NAME}"
-  else
-    maps="$(echo "$provider" | jq -c --arg m "$mapping_pk" \
-      '((.property_mappings // []) + [$m]) | unique')"
-    api PATCH "/providers/oauth2/${provider_pk}/" "$(jq -n --argjson maps "$maps" \
-      '{property_mappings: $maps}')" >/dev/null
-    log "Attached ${SCOPE_NAME} mapping to provider ${PROVIDER_NAME} (pk=${provider_pk})"
-  fi
+  log "Set attributes.${ATTRIBUTE_KEY}=${TENANT_ID} on ${SA_NAME}"
 fi
 
 log ""
@@ -189,6 +151,6 @@ else
 fi
 log ""
 log "Configure the host's oauth2 block with the client_id/client_secret above and"
-log "scopes = [\"mimir:write\", \"loki:write\", \"${SCOPE_NAME}\"] (token_url stays the shared"
-log "https://auth.cloud.witl.xyz/application/o/token/)."
+log "scopes = [\"openid\", \"tenant\", \"mimir:write\", \"loki:write\"] (matching home-ops's"
+log "convention), token_url stays https://auth.cloud.witl.xyz/application/o/token/."
 log "Done."
