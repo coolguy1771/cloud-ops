@@ -55,12 +55,8 @@ spec:
     auth.anonymous:
       enabled: "false"
     database:
-      # Direct to the CNPG primary service, not postgres-pooler-rw: PgBouncer's
-      # transaction pooling mode breaks Grafana's server-side prepared statements
-      # (queries can land on a different backend connection mid-session), causing
-      # silent "prepared statement does not exist" failures across alerting, auth
-      # token cleanup, secret migration, and usage stats. Grafana keeps its own
-      # connection pool, so it doesn't need PgBouncer in front of it anyway.
+      # postgres-rw directly, not postgres-pooler-rw: PgBouncer's transaction pooling
+      # breaks Grafana's server-side prepared statements.
       type: postgres
       host: postgres-rw.database.svc.cluster.local:5432
       name: grafana
@@ -124,11 +120,7 @@ spec:
             fsGroup: 1000
             fsGroupChangePolicy: OnRootMismatch
           volumes:
-            # emptyDir, not a PVC: /var/lib/grafana only holds regenerable state now
-            # that the DB is on Postgres (plugin cache copied from the image on each
-            # start, local unified-search index rebuilt from Postgres, ephemeral
-            # csv/pdf/png export scratch space). Still needed as a volume because
-            # readOnlyRootFilesystem is set below.
+            # emptyDir: /var/lib/grafana only holds regenerable state now that the DB is on Postgres.
             - name: grafana-data
               emptyDir: {}
             - name: postgres-ca

@@ -32,13 +32,8 @@ releases:
     chart: oci://ghcr.io/prometheus-community/charts/prometheus-operator-crds
     version: "31.0.1"
 
-  # Standard gateway.networking.k8s.io CRDs (Gateway, HTTPRoute, GatewayClass,
-  # ReferenceGrant), needed by Istio Gateway/HTTPRoute/waypoint resources and by
-  # every app's httproute.yaml. Previously came along for free via the envoy-gateway
-  # release below, which bundled them; removing that release without replacing this
-  # dropped the only CRD source, so a fresh bootstrap would fail with unknown-kind
-  # errors on Gateway/HTTPRoute. This chart installs *only* CRDs (no app) — safe to
-  # keep even without Envoy Gateway installed.
+  # Standard gateway.networking.k8s.io CRDs, needed by Istio Gateway/HTTPRoute/waypoint
+  # resources. Previously came bundled with the now-removed envoy-gateway release.
   - name: gateway-api-crds
     namespace: istio-system
     chart: oci://docker.io/envoyproxy/gateway-crds-helm

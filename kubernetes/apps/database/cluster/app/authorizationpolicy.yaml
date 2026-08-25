@@ -1,11 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1.json
-# Identity-based enforcement (paired with networkpolicy.yaml's coarser L3/L4 rules).
-# Presence of an ALLOW policy flips this namespace to deny-by-default for anything not
-# listed here. Principals/ports based on observed traffic (ztunnel access logs, 6h window):
-# authentik and grafana are the application consumers; alloy scrapes exporters;
-# postgres/poolers talk to each other for replication, the CNPG instance-manager API,
-# and pooler backends.
+# Presence of an ALLOW policy flips this namespace to deny-by-default for anything not listed here.
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:

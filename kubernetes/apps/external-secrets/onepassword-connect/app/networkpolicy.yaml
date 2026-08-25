@@ -1,8 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/cilium.io/ciliumnetworkpolicy_v2.json
-# L3/L4 defense-in-depth for onepassword-connect. Based on observed traffic (ztunnel
-# access logs, 6h window): only the external-secrets controller calls it, in-namespace.
-# Port 15008 (ztunnel HBONE) must stay allowed — see kubernetes/apps/flux-system/flux-operator.
+# Port 15008 is ztunnel HBONE (see flux-operator/networkpolicy.yaml).
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
