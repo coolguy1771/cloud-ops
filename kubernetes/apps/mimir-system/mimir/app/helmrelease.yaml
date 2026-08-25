@@ -9,7 +9,12 @@ spec:
     kind: OCIRepository
     name: mimir
   interval: 1h
-  timeout: 10m
+  # Cold start loads blocks from object storage; 10m was timing out and
+  # triggering Helm rollbacks that flip-flopped STS <-> Deployment.
+  timeout: 30m
+  upgrade:
+    remediation:
+      remediateLastFailure: false
   values:
     fullnameOverride: mimir
     # Mimir 3.2.0's binary has no write/read/backend meta-targets (that's a
@@ -38,6 +43,18 @@ spec:
               - secretRef:
                   name: mimir-s3-credentials
             probes:
+              # Startup can take several minutes while syncing blocks; keep
+              # liveness from killing the process during that window.
+              startup:
+                enabled: true
+                custom: true
+                spec:
+                  httpGet:
+                    path: /ready
+                    port: 8080
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 60
               liveness:
                 enabled: true
                 custom: true
@@ -45,10 +62,9 @@ spec:
                   httpGet:
                     path: /ready
                     port: 8080
-                  initialDelaySeconds: 45
-                  periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
+                  periodSeconds: 15
+                  timeoutSeconds: 5
+                  failureThreshold: 6
               readiness:
                 enabled: true
                 custom: true
@@ -56,10 +72,9 @@ spec:
                   httpGet:
                     path: /ready
                     port: 8080
-                  initialDelaySeconds: 30
                   periodSeconds: 10
-                  timeoutSeconds: 1
-                  failureThreshold: 3
+                  timeoutSeconds: 5
+                  failureThreshold: 6
             securityContext:
               allowPrivilegeEscalation: false
               readOnlyRootFilesystem: false

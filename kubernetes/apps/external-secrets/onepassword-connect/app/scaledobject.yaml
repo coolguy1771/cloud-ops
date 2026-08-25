@@ -11,6 +11,17 @@ spec:
     name: onepassword-connect
   minReplicaCount: 2
   maxReplicaCount: 3
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 600
+          policies:
+            - type: Percent
+              value: 50
+              periodSeconds: 120
+        scaleUp:
+          stabilizationWindowSeconds: 120
   triggers:
     - type: cpu
       metricType: Utilization

@@ -71,6 +71,9 @@ spec:
       plugin_admin_enabled: "false"
   deployment:
     spec:
+      # Fixed replicas: grafana-operator reconciles Deployment.replicas and
+      # fights KEDA/HPA (resets to 1). Scale via this field, not a ScaledObject.
+      replicas: 2
       strategy:
         type: RollingUpdate
       template:

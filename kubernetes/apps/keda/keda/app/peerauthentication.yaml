@@ -1,4 +1,7 @@
 ---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/peerauthentication_v1.json
+# kube-apiserver (off-mesh) must reach admission webhooks and the external
+# metrics APIService; STRICT ambient HBONE makes those handshakes EOF.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:
@@ -8,5 +11,17 @@ spec:
   selector:
     matchLabels:
       app: keda-admission-webhooks
+  mtls:
+    mode: PERMISSIVE
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: keda-metrics-apiserver
+  namespace: keda
+spec:
+  selector:
+    matchLabels:
+      app: keda-operator-metrics-apiserver
   mtls:
     mode: PERMISSIVE
