@@ -66,8 +66,8 @@ spec:
     metrics:
       enabled: "true"
     dataproxy:
-      # Default 30s is too low for Explore label discovery and large dashboards.
-      timeout: "120"
+      # Loki Explore volume/labels and large dashboards need more headroom.
+      timeout: "300"
     news:
       news_feed_enabled: "false"
     plugins:
@@ -80,6 +80,10 @@ spec:
       strategy:
         type: RollingUpdate
       template:
+        metadata:
+          labels:
+            # Bypass namespace waypoint for high-concurrency datasource proxy traffic.
+            istio.io/use-waypoint: none
         spec:
           affinity:
             podAntiAffinity:

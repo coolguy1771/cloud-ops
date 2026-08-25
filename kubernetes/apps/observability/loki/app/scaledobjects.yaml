@@ -37,8 +37,8 @@ spec:
   scaleTargetRef:
     name: loki-read
     kind: Deployment
-  minReplicaCount: 2
-  maxReplicaCount: 4
+  minReplicaCount: 3
+  maxReplicaCount: 6
   advanced:
     horizontalPodAutoscalerConfig:
       behavior:
@@ -56,7 +56,7 @@ spec:
         serverAddress: http://mimir-app.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
         query: sum(rate(loki_request_duration_seconds_count{job="observability/loki-read"}[2m]))
-        threshold: "50"
+        threshold: "100"
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject

@@ -6,6 +6,7 @@ namespace: observability
 resources:
   - ./namespace.yaml
   - ./waypoint.yaml
+  - ./waypoint-hpa.yaml
   - ./grafana/ks.yaml
   - ./loki/app
   - ./tempo/app

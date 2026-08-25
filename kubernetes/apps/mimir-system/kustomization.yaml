@@ -6,4 +6,5 @@ namespace: mimir-system
 resources:
   - ./namespace.yaml
   - ./waypoint.yaml
+  - ./waypoint-hpa.yaml
   - ./mimir/ks.yaml
