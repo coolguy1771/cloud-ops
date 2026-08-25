@@ -109,12 +109,12 @@ if [[ -n "$SERVICE_ACCOUNT" ]]; then
   [[ -n "$sa" ]] || die "no user found with username '${SERVICE_ACCOUNT}'"
 else
   # The client_credentials service account is auto-named ak-<provider_name>-client_credentials
-  # with authentik's own slug transform, which we don't try to replicate - search broadly for
-  # every auto-generated client_credentials account instead and match against the provider name.
+  # using the provider's display name verbatim (spaces and case intact, no slugification) -
+  # search broadly for every auto-generated client_credentials account and match against it.
   candidates="$(api GET "/core/users/?search=$(urlencode "client_credentials")&page_size=100")"
   sa="$(echo "$candidates" | jq -c --arg p "$PROVIDER_NAME" \
     '[.results[] | select(.username | test("client_credentials$"))] as $all
-     | ($all | map(select(.username | ascii_downcase | contains($p | ascii_downcase | gsub(" "; "-"))))) as $matched
+     | ($all | map(select(.username | ascii_downcase | contains($p | ascii_downcase)))) as $matched
      | if ($matched | length) == 1 then $matched[0]
        elif ($all | length) == 1 then $all[0]
        else empty end')"
