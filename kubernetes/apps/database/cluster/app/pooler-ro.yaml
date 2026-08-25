@@ -30,4 +30,10 @@ spec:
                 labelSelector:
                   matchLabels:
                     app.kubernetes.io/name: postgres-pooler-ro
+                topologyKey: topology.kubernetes.io/region
+            - weight: 50
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: postgres-pooler-ro
                 topologyKey: kubernetes.io/hostname

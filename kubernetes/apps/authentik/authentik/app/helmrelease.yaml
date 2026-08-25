@@ -21,6 +21,10 @@ spec:
       error_reporting:
         enabled: false
     global:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/region
+          whenUnsatisfiable: ScheduleAnyway
       volumes:
         - name: postgres-ca
           secret:
