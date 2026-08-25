@@ -15,13 +15,18 @@ data:
         spec:
           affinity:
             podAntiAffinity:
-              requiredDuringSchedulingIgnoredDuringExecution:
-                - labelSelector:
-                    matchLabels:
-                      gateway.networking.k8s.io/gateway-name: istio
-                  topologyKey: topology.kubernetes.io/region
+              # preferred, not required: a hard region constraint blocks the surge pod
+              # during a rolling update once all 3 regions already hold a pod (learned
+              # live — the rollout stalls Pending with "didn't match pod anti-affinity
+              # rules" until the constraint is softened).
               preferredDuringSchedulingIgnoredDuringExecution:
                 - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchLabels:
+                        gateway.networking.k8s.io/gateway-name: istio
+                    topologyKey: topology.kubernetes.io/region
+                - weight: 50
                   podAffinityTerm:
                     labelSelector:
                       matchLabels:
