@@ -1,4 +1,4 @@
----
+#!/usr/bin/env bash
 # Bootstrap Authentik OAuth app for Hubble UI (authservice OIDC).
 #
 # Prerequisites:
