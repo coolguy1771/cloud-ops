@@ -1,0 +1,43 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1.json
+# Identity-based enforcement (paired with networkpolicy.yaml's coarser L3/L4 rules).
+# Presence of an ALLOW policy flips this namespace to deny-by-default for anything not
+# listed here. Principals/ports based on observed traffic (ztunnel access logs, 6h window):
+# authentik is the only application consumer; alloy scrapes exporters; postgres/poolers
+# talk to each other for replication, the CNPG instance-manager API, and pooler backends.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: database-allow
+spec:
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/authentik/sa/default
+              - cluster.local/ns/authentik/sa/authentik
+      to:
+        - operation:
+            ports:
+              - "5432"
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/observability/sa/k8s-monitoring-alloy-metrics
+      to:
+        - operation:
+            ports:
+              - "9187"
+              - "9127"
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/database/sa/postgres
+              - cluster.local/ns/database/sa/postgres-pooler-ro
+              - cluster.local/ns/database/sa/postgres-pooler-rw
+      to:
+        - operation:
+            ports:
+              - "5432"
+              - "8000"

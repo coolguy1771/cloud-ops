@@ -16,3 +16,5 @@ resources:
   - ./podmonitor.yaml
   - ./prometheusrule.yaml
   - ./grafanadashboard.yaml
+  - ./networkpolicy.yaml
+  - ./authorizationpolicy.yaml

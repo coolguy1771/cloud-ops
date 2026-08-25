@@ -1,0 +1,26 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/security.istio.io/authorizationpolicy_v1.json
+# Identity-based enforcement (paired with networkpolicy.yaml's coarser L3/L4 rules).
+# Presence of an ALLOW policy flips onepassword-connect to deny-by-default for anything
+# not listed here. Scoped by selector to just this workload, not the whole namespace,
+# since the other external-secrets-* pods (webhook, cert-controller) weren't observed
+# needing the same restriction and may take traffic this survey didn't capture (e.g.
+# apiserver webhook calls).
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: onepassword-connect-allow
+spec:
+  selector:
+    matchLabels:
+      app: onepassword-connect
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/external-secrets/sa/external-secrets
+      to:
+        - operation:
+            ports:
+              - "80"
