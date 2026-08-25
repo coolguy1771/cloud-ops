@@ -1,0 +1,121 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: authservice
+  labels:
+    app.kubernetes.io/name: authservice
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: authservice-secrets
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: authservice-secrets
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: authservice-secrets
+subjects:
+  - kind: ServiceAccount
+    name: authservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authservice
+  labels:
+    app.kubernetes.io/name: authservice
+spec:
+  selector:
+    app.kubernetes.io/name: authservice
+  ports:
+    - name: grpc-authservice
+      port: 10003
+      targetPort: 10003
+      protocol: TCP
+    - name: grpc-health
+      port: 10004
+      targetPort: 10004
+      protocol: TCP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authservice
+  labels:
+    app.kubernetes.io/name: authservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authservice
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authservice
+    spec:
+      serviceAccountName: authservice
+      containers:
+        - name: authservice
+          image: ghcr.io/istio-ecosystem/authservice/authservice:1.1.8
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: authz
+              containerPort: 10003
+              protocol: TCP
+            - name: health
+              containerPort: 10004
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/authservice
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          livenessProbe:
+            initialDelaySeconds: 1
+            periodSeconds: 5
+            tcpSocket:
+              port: 10003
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            httpGet:
+              port: 10004
+              path: /healthz
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: config
+          secret:
+            secretName: authservice-oidc
+            items:
+              - key: config.json
+                path: config.json
+        - name: tmp
+          emptyDir: {}

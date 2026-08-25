@@ -197,3 +197,49 @@ spec:
       when:
         - key: request.auth.claims[scope]
           values: ["mimir:read"]
+---
+# Hubble UI: OIDC via authservice (CUSTOM), then require Authentik group cloud-ops-admin.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-hubble-authservice
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  action: CUSTOM
+  provider:
+    name: authservice-grpc
+  rules:
+    - to:
+        - operation:
+            hosts: ["hubble.cloud.witl.xyz"]
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: gateway-allow-hubble
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  action: ALLOW
+  rules:
+    # OIDC callback / logout handled by authservice before JWT exists.
+    - to:
+        - operation:
+            hosts: ["hubble.cloud.witl.xyz"]
+            paths: ["/callback", "/callback*", "/authservice_logout", "/authservice_logout*"]
+    - to:
+        - operation:
+            hosts: ["hubble.cloud.witl.xyz"]
+            paths: ["/", "/*"]
+      when:
+        - key: request.auth.claims[iss]
+          values: ["https://auth.cloud.witl.xyz/application/o/hubble/"]
+        - key: request.auth.claims[groups]
+          values: ["cloud-ops-admin"]

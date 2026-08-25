@@ -25,3 +25,6 @@ spec:
       outputClaimToHeaders:
         - header: X-Scope-OrgID
           claim: tenant_id
+    - issuer: "https://auth.cloud.witl.xyz/application/o/hubble/"
+      jwksUri: "https://auth.cloud.witl.xyz/application/o/hubble/jwks/"
+      forwardOriginalToken: true
