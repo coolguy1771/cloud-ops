@@ -48,8 +48,14 @@ spec:
             collector:
               controller:
                 replicas: 2
+    # One kubernetesEnrichment processor per feature, not one shared by all: the chart
+    # renders each feature's referenced processor as its own set of Alloy blocks named
+    # after the processor key, with no dedup across features. Four features sharing one
+    # "k8s-metadata" key against the same metrics/prometheus pipeline type produced 4x
+    # duplicate block declarations (prometheus.relabel/enrich "..._metrics_prometheus"),
+    # which crashlooped every alloy-metrics pod on config load.
     dataProcessors:
-      k8s-metadata:
+      k8s-metadata-cluster: &k8sMetadata
         type: kubernetesEnrichment
         podLabels:
           app: app.kubernetes.io/name
@@ -58,16 +64,20 @@ spec:
           instance: app.kubernetes.io/instance
         namespaceLabels:
           istio_dataplane: istio.io/dataplane-mode
+      k8s-metadata-host: *k8sMetadata
+      k8s-metadata-annotation: *k8sMetadata
+      k8s-metadata-operator: *k8sMetadata
+      k8s-metadata-app: *k8sMetadata
     clusterMetrics:
       enabled: true
       collector: alloy-metrics
       dataProcessors:
-        - k8s-metadata
+        - k8s-metadata-cluster
     hostMetrics:
       enabled: true
       collector: alloy-metrics
       dataProcessors:
-        - k8s-metadata
+        - k8s-metadata-host
       nodeLabels:
         region: true
         availabilityZone: true
@@ -81,7 +91,7 @@ spec:
       enabled: true
       collector: alloy-metrics
       dataProcessors:
-        - k8s-metadata
+        - k8s-metadata-annotation
       nodeLabels:
         region: true
         availabilityZone: true
@@ -93,12 +103,12 @@ spec:
       enabled: true
       collector: alloy-metrics
       dataProcessors:
-        - k8s-metadata
+        - k8s-metadata-operator
     applicationObservability:
       enabled: true
       collector: alloy-receiver
       dataProcessors:
-        - k8s-metadata
+        - k8s-metadata-app
       metrics:
         enabled: false
       logs:
