@@ -60,9 +60,10 @@ spec:
       limits_config:
         allow_structured_metadata: true
         volume_enabled: true
-        # Lets a JWT's tenant_id claim carry multiple pipe-delimited tenants for
-        # query endpoints (Authentik group-bound tenants). Write/push is always
-        # single-tenant regardless of this flag.
+      # Lets a JWT's tenant_id claim carry multiple pipe-delimited tenants for
+      # query endpoints (Authentik group-bound tenants). Write/push is always
+      # single-tenant regardless of this flag. Belongs under querier:, not limits_config:.
+      querier:
         multi_tenant_queries_enabled: true
       ruler:
         enable_api: true
