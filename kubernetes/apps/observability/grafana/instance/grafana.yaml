@@ -80,10 +80,6 @@ spec:
       strategy:
         type: RollingUpdate
       template:
-        metadata:
-          labels:
-            # Bypass namespace waypoint for high-concurrency datasource proxy traffic.
-            istio.io/use-waypoint: none
         spec:
           affinity:
             podAntiAffinity:
