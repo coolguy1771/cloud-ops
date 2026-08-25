@@ -55,6 +55,14 @@ spec:
       enabled: false
     selfReporting:
       enabled: false
+    alloy-operator:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
     collectors:
       alloy-metrics:
         presets:
@@ -62,3 +70,10 @@ spec:
         alloy:
           clustering:
             portName: tcp
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

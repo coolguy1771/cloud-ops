@@ -10,7 +10,6 @@ metadata:
 data:
   deployment: |
     spec:
-      replicas: 3
       template:
         spec:
           affinity:

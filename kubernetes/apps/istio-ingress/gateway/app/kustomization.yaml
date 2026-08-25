@@ -10,3 +10,4 @@ resources:
   - ./envoyfilter-hardening.yaml
   - ./envoyfilter-skip-jwt-authentik.yaml
   - ./podmonitor.yaml
+  - ./scaledobject.yaml

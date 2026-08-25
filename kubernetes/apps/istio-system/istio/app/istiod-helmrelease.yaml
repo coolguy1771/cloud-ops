@@ -23,6 +23,13 @@ spec:
     # the chart omits spec.replicas and KEDA's HPA owns it.
     autoscaleEnabled: false
     rollingMaxUnavailable: 1
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
     affinity:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:

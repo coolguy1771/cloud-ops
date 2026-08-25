@@ -9,6 +9,36 @@ spec:
     kind: OCIRepository
     name: tempo
   interval: 1h
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: HorizontalPodAutoscaler
+              name: tempo-distributor
+            patch: |
+              $patch: delete
+              apiVersion: autoscaling/v2
+              kind: HorizontalPodAutoscaler
+              metadata:
+                name: tempo-distributor
+          - target:
+              kind: HorizontalPodAutoscaler
+              name: tempo-querier
+            patch: |
+              $patch: delete
+              apiVersion: autoscaling/v2
+              kind: HorizontalPodAutoscaler
+              metadata:
+                name: tempo-querier
+          - target:
+              kind: HorizontalPodAutoscaler
+              name: tempo-query-frontend
+            patch: |
+              $patch: delete
+              apiVersion: autoscaling/v2
+              kind: HorizontalPodAutoscaler
+              metadata:
+                name: tempo-query-frontend
   values:
     fullnameOverride: tempo
     multitenancyEnabled: true
@@ -31,6 +61,13 @@ spec:
           insecure: false
     ingester:
       replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
@@ -43,21 +80,45 @@ spec:
       config:
         replication_factor: 1
     distributor:
-      replicas: 1
+      autoscaling:
+        enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
         - secretRef:
             name: tempo-r2-credentials
     querier:
-      replicas: 1
+      autoscaling:
+        enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
         - secretRef:
             name: tempo-r2-credentials
     queryFrontend:
-      replicas: 1
+      autoscaling:
+        enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
@@ -65,6 +126,13 @@ spec:
             name: tempo-r2-credentials
     compactor:
       replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
@@ -72,10 +140,24 @@ spec:
             name: tempo-r2-credentials
     memcached:
       replicas: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
     # TraceQL metrics ({ } | rate()) need the generator ring + local-blocks.
     metricsGenerator:
       enabled: true
       replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:

@@ -1,0 +1,19 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/keda.sh/scaledobject_v1alpha1.json
+# minReplicaCount 3 preserves the one-per-region HA floor from gateway-options.yaml.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: gateway-istio
+spec:
+  scaleTargetRef:
+    name: istio-istio
+  minReplicaCount: 3
+  maxReplicaCount: 6
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(istio_requests_total{job="istio-ingress/istio-ingress-gateway"}[2m]))
+        threshold: "200"

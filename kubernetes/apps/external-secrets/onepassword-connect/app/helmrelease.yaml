@@ -35,12 +35,23 @@ spec:
         imageRepository: ghcr.io/1password/connect-api
         serviceMonitor:
           enabled: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
       credentialsName: onepassword-connect-credentials-secret
       sync:
         imageRepository: ghcr.io/1password/connect-sync
         resources:
           requests:
             cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 128Mi
       hpa:
         enabled: false
       pdb:

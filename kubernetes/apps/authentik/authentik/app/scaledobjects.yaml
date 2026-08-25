@@ -1,0 +1,37 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/keda.sh/scaledobject_v1alpha1.json
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: authentik-server
+spec:
+  scaleTargetRef:
+    name: authentik-server
+  minReplicaCount: 2
+  maxReplicaCount: 5
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(authentik_main_request_duration_seconds_count{job="authentik-server-metrics"}[2m]))
+        threshold: "50"
+---
+# max(), not sum(): authentik_tasks_queued reflects the shared DB-backed task queue,
+# reported identically by every pod — summing would multiply the value by pod count.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: authentik-worker
+spec:
+  scaleTargetRef:
+    name: authentik-worker
+  minReplicaCount: 2
+  maxReplicaCount: 5
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: max(authentik_tasks_queued)
+        threshold: "10"

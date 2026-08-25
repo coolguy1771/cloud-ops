@@ -8,3 +8,4 @@ resources:
   - ./serviceaccount-ca.yaml
   - ./secretstore.yaml
   - ./externalsecret.yaml
+  - ./scaledobjects.yaml

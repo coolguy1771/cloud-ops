@@ -17,8 +17,30 @@ spec:
       enabled: true
     grafanaDashboard:
       enabled: true
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    certController:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
     webhook:
       replicaCount: 2
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
   install:
     crds: Skip
   upgrade:

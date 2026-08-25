@@ -1,0 +1,14 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/servicemonitor_v1.json
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mimir
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mimir
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s

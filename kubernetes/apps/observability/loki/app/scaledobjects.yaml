@@ -1,0 +1,55 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/keda.sh/scaledobject_v1alpha1.json
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: loki-write
+spec:
+  scaleTargetRef:
+    name: loki-write
+    kind: StatefulSet
+  minReplicaCount: 2
+  maxReplicaCount: 4
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(loki_request_duration_seconds_count{job="observability/loki-write"}[2m]))
+        threshold: "50"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: loki-read
+spec:
+  scaleTargetRef:
+    name: loki-read
+    kind: Deployment
+  minReplicaCount: 2
+  maxReplicaCount: 4
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(loki_request_duration_seconds_count{job="observability/loki-read"}[2m]))
+        threshold: "50"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: loki-backend
+spec:
+  scaleTargetRef:
+    name: loki-backend
+    kind: StatefulSet
+  minReplicaCount: 2
+  maxReplicaCount: 4
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(loki_request_duration_seconds_count{job="observability/loki-backend"}[2m]))
+        threshold: "50"

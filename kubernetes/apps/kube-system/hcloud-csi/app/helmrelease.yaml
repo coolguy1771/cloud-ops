@@ -27,9 +27,35 @@ spec:
           name: hcloud-csi
           key: token
       hcloudVolumeDefaultLocation: "fsn1"
+      resources:
+        csiAttacher:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 128Mi}
+        csiResizer:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 128Mi}
+        csiProvisioner:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 128Mi}
+        livenessProbe:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 128Mi}
+        hcloudCSIDriver:
+          requests: {cpu: 25m, memory: 64Mi}
+          limits: {cpu: 200m, memory: 256Mi}
     node:
       kubeletDir: /var/lib/kubelet
       affinity: {}
+      resources:
+        csiNodeDriverRegistrar:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 128Mi}
+        livenessProbe:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 128Mi}
+        hcloudCSIDriver:
+          requests: {cpu: 25m, memory: 64Mi}
+          limits: {cpu: 200m, memory: 256Mi}
     storageClasses:
       - name: hcloud-volumes
         defaultStorageClass: true

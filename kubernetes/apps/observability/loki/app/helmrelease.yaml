@@ -9,6 +9,38 @@ spec:
     kind: OCIRepository
     name: loki
   interval: 1h
+  # autoscaling.enabled per component omits chart-managed replicas so KEDA can own
+  # them, but also renders the chart's own HPA — remove those so only KEDA's HPA exists.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: HorizontalPodAutoscaler
+              name: loki-write
+            patch: |
+              $patch: delete
+              apiVersion: autoscaling/v2
+              kind: HorizontalPodAutoscaler
+              metadata:
+                name: loki-write
+          - target:
+              kind: HorizontalPodAutoscaler
+              name: loki-read
+            patch: |
+              $patch: delete
+              apiVersion: autoscaling/v2
+              kind: HorizontalPodAutoscaler
+              metadata:
+                name: loki-read
+          - target:
+              kind: HorizontalPodAutoscaler
+              name: loki-backend
+            patch: |
+              $patch: delete
+              apiVersion: autoscaling/v2
+              kind: HorizontalPodAutoscaler
+              metadata:
+                name: loki-backend
   values:
     deploymentMode: SimpleScalable
     loki:
@@ -48,7 +80,15 @@ spec:
     singleBinary:
       replicas: 0
     write:
-      replicas: 2
+      autoscaling:
+        enabled: true
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
@@ -62,7 +102,15 @@ spec:
             matchLabels:
               app.kubernetes.io/component: write
     read:
-      replicas: 2
+      autoscaling:
+        enabled: true
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
@@ -76,7 +124,15 @@ spec:
             matchLabels:
               app.kubernetes.io/component: read
     backend:
-      replicas: 2
+      autoscaling:
+        enabled: true
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
@@ -89,10 +145,27 @@ spec:
           labelSelector:
             matchLabels:
               app.kubernetes.io/component: backend
+    resultsCache:
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1024Mi
+        limits:
+          cpu: 1000m
+          memory: 1229Mi
+    sidecar:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
     gateway:
       enabled: false
-    serviceMonitor:
-      enabled: true
+    monitoring:
+      serviceMonitor:
+        enabled: true
     test:
       enabled: false
     lokiCanary:

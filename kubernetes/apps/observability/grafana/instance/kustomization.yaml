@@ -10,3 +10,4 @@ resources:
   - ./istio-dashboards.yaml
   - ./peerauthentication.yaml
   - ./servicemonitor.yaml
+  - ./scaledobject.yaml

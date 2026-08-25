@@ -62,6 +62,13 @@ spec:
       limits:
         cpu: 2
         memory: 2Gi
+    initResources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
     prometheus:
       enabled: true
       port: 9962

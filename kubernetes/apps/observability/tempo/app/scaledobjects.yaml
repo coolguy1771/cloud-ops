@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/keda.sh/scaledobject_v1alpha1.json
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: tempo-distributor
+spec:
+  scaleTargetRef:
+    name: tempo-distributor
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(tempo_request_duration_seconds_count{job="observability/distributor"}[2m]))
+        threshold: "50"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: tempo-querier
+spec:
+  scaleTargetRef:
+    name: tempo-querier
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(tempo_request_duration_seconds_count{job="observability/querier"}[2m]))
+        threshold: "50"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: tempo-query-frontend
+spec:
+  scaleTargetRef:
+    name: tempo-query-frontend
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://mimir.mimir-system.svc.cluster.local:8080/prometheus
+        customHeaders: X-Scope-OrgID=witl-xyz
+        query: sum(rate(tempo_request_duration_seconds_count{job="observability/query-frontend"}[2m]))
+        threshold: "50"

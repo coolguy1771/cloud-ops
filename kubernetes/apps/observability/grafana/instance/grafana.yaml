@@ -71,7 +71,6 @@ spec:
       plugin_admin_enabled: "false"
   deployment:
     spec:
-      replicas: 2
       strategy:
         type: RollingUpdate
       template:
@@ -125,6 +124,13 @@ spec:
                   mountPath: /etc/ssl/certs/postgres-ca.crt
                   subPath: ca.crt
                   readOnly: true
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+                limits:
+                  cpu: 500m
+                  memory: 1Gi
               securityContext:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true

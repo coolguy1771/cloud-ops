@@ -25,6 +25,17 @@ spec:
     controllerServiceAccount:
       name: actions-runner-controller
       namespace: actions-runner-system
+    listenerTemplate:
+      spec:
+        containers:
+          - name: listener
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 500m
+                memory: 256Mi
     template:
       metadata:
         labels:
@@ -47,6 +58,13 @@ spec:
                 value: "false"
             securityContext:
               allowPrivilegeEscalation: false
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 500m
+                memory: 256Mi
         securityContext:
           fsGroup: 1001
           fsGroupChangePolicy: OnRootMismatch

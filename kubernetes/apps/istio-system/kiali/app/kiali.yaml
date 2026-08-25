@@ -21,6 +21,13 @@ spec:
     view_only_mode: true
     accessible_namespaces:
       - "**"
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 1Gi
   external_services:
     istio:
       root_namespace: istio-system
