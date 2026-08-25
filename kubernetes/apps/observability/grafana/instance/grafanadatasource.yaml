@@ -23,6 +23,7 @@ spec:
       httpMethod: POST
       implementation: mimir
       oauthPassThru: true
+      timeout: 120
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
@@ -42,6 +43,7 @@ spec:
     jsonData:
       implementation: mimir
       oauthPassThru: true
+      timeout: 120
     url: https://mimir.cloud.witl.xyz
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
@@ -62,6 +64,7 @@ spec:
     url: https://loki.cloud.witl.xyz
     jsonData:
       oauthPassThru: true
+      timeout: 120
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1

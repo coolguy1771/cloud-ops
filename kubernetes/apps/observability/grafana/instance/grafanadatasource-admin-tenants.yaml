@@ -24,6 +24,7 @@ spec:
       httpMethod: POST
       httpHeaderName1: X-Scope-OrgID
       implementation: mimir
+      timeout: 120
     secureJsonData:
       httpHeaderValue1: witl-xyz
 ---
@@ -44,6 +45,7 @@ spec:
     url: http://loki-read.observability.svc.cluster.local:3100
     jsonData:
       httpHeaderName1: X-Scope-OrgID
+      timeout: 120
     secureJsonData:
       httpHeaderValue1: witl-xyz
 ---
@@ -91,6 +93,7 @@ spec:
       httpMethod: POST
       httpHeaderName1: X-Scope-OrgID
       implementation: mimir
+      timeout: 120
     secureJsonData:
       httpHeaderValue1: icbplays-net
 ---
@@ -111,6 +114,7 @@ spec:
     url: http://loki-read.observability.svc.cluster.local:3100
     jsonData:
       httpHeaderName1: X-Scope-OrgID
+      timeout: 120
     secureJsonData:
       httpHeaderValue1: icbplays-net
 ---

@@ -65,6 +65,9 @@ spec:
       ca_cert_path: /etc/ssl/certs/postgres-ca.crt
     metrics:
       enabled: "true"
+    dataproxy:
+      # Default 30s is too low for Explore label discovery and large dashboards.
+      timeout: "120"
     news:
       news_feed_enabled: "false"
     plugins:
