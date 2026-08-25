@@ -1,0 +1,12 @@
+---
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: keda-webhooks
+  namespace: keda
+spec:
+  selector:
+    matchLabels:
+      app: keda-admission-webhooks
+  mtls:
+    mode: PERMISSIVE
