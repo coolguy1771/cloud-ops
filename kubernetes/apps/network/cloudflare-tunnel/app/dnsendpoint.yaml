@@ -1,9 +1,12 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/externaldns.k8s.io/dnsendpoint_v1alpha1.json
+# Tunnel disabled — do not publish external.cloud.witl.xyz while cloudflared is scaled to 0.
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
   name: cloudflare-tunnel
+  annotations:
+    external-dns.alpha.kubernetes.io/controller: none
 spec:
   endpoints:
     - dnsName: external.cloud.witl.xyz
