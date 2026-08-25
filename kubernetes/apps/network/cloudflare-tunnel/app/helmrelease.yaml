@@ -81,7 +81,7 @@ spec:
                   keepAliveTimeout: 3600s
                   originServerName: external.cloud.witl.xyz
                   tcpKeepAlive: 7200s
-                service: https://envoy.{{ .Release.Namespace }}.svc.cluster.local:443
+                service: https://istio-istio.istio-ingress.svc.cluster.local:443
               - service: http_status:404
     persistence:
       config-file:
