@@ -1,0 +1,520 @@
+---
+# Delilah log alerts (icbplays-net) — symptom-first, actionable, low-noise.
+# Principles:
+# - Prefer user/data impact over raw ERROR rates
+# - OOM stays on Prometheus (do not duplicate here)
+# - Presence alerts: or vector(0) + noDataState OK
+# - Absence alerts: or vector(0) + lt threshold + pending window (no noData paging)
+# - critical = interrupt; warning = investigate soon
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanaalertrulegroup_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaAlertRuleGroup
+metadata:
+  name: delilah-loki-symptoms
+spec:
+  folderRef: delilah
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  interval: 2m
+  name: delilah-loki-symptoms
+  rules:
+    # Player-visible lag: only "Running >=5s behind", sustained.
+    - uid: delilah-atm10-lag
+      title: DelilahAtm10SevereLag
+      condition: C
+      for: 15m
+      keepFiringFor: 15m
+      annotations:
+        summary: ATM10 on delilah is >5s behind for 15m
+        description: >-
+          Minecraft tick lag ("Can't keep up" with Running >=5000ms).
+          Check CPU steal, disk I/O, and recent player/chunk load. OOM is alerted separately via Prometheus.
+      labels:
+        severity: warning
+        host: delilah
+        service: atm10
+        tenant: icbplays-net
+        category: logs
+      noDataState: OK
+      execErrState: Error
+      isPaused: false
+      data:
+        - refId: A
+          queryType: range
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasourceUid: loki-icbplays-net
+          model:
+            datasource:
+              type: loki
+              uid: loki-icbplays-net
+            editorMode: code
+            expr: |
+              sum(
+                count_over_time(
+                  {instance="delilah.icbplays.net", service_name="atm10"}
+                  |~ "Can't keep up!.+Running ([5-9][0-9]{3}|[1-9][0-9]{4,})ms"
+                  [5m]
+                )
+              ) or vector(0)
+            hide: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+            queryType: range
+            refId: A
+        - refId: B
+          datasourceUid: __expr__
+          model:
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            reducer: last
+            refId: B
+            type: reduce
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: C
+          datasourceUid: __expr__
+          model:
+            conditions:
+              - evaluator:
+                  params: [0]
+                  type: gt
+                operator:
+                  type: and
+                query:
+                  params: [C]
+                reducer:
+                  params: []
+                  type: last
+                type: query
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: B
+            refId: C
+            type: threshold
+            intervalMs: 1000
+            maxDataPoints: 43200
+
+    # Hard crash — page-worthy. alertname=Watchdog is dropped in Alertmanager (null).
+    - uid: delilah-atm10-fatal
+      title: DelilahAtm10Fatal
+      condition: C
+      for: 0s
+      keepFiringFor: 30m
+      annotations:
+        summary: ATM10 on delilah hit FATAL
+        description: >-
+          Server logged FATAL. Confirm whether the container restarted,
+          check last backup freshness, and review atm10 logs around the event.
+      labels:
+        severity: critical
+        host: delilah
+        service: atm10
+        tenant: icbplays-net
+        category: logs
+      noDataState: OK
+      execErrState: Error
+      isPaused: false
+      data:
+        - refId: A
+          queryType: range
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasourceUid: loki-icbplays-net
+          model:
+            datasource:
+              type: loki
+              uid: loki-icbplays-net
+            editorMode: code
+            expr: |
+              sum(
+                count_over_time(
+                  {instance="delilah.icbplays.net", service_name="atm10"}
+                  |= "FATAL"
+                  != "Watchdog"
+                  [5m]
+                )
+              ) or vector(0)
+            hide: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+            queryType: range
+            refId: A
+        - refId: B
+          datasourceUid: __expr__
+          model:
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            reducer: last
+            refId: B
+            type: reduce
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: C
+          datasourceUid: __expr__
+          model:
+            conditions:
+              - evaluator:
+                  params: [0]
+                  type: gt
+                operator:
+                  type: and
+                query:
+                  params: [C]
+                reducer:
+                  params: []
+                  type: last
+                type: query
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: B
+            refId: C
+            type: threshold
+            intervalMs: 1000
+            maxDataPoints: 43200
+
+    # Edge symptom: sustained 5xx (single blips ignored).
+    - uid: delilah-traefik-5xx
+      title: DelilahTraefik5xx
+      condition: C
+      for: 10m
+      keepFiringFor: 15m
+      annotations:
+        summary: Traefik on delilah returning sustained HTTP 5xx
+        description: >-
+          Upstream or Traefik itself is failing. Check atm10/icb-proxy/palworld
+          container health and Traefik router status. Ignore scanner 4xx noise.
+      labels:
+        severity: critical
+        host: delilah
+        service: traefik
+        tenant: icbplays-net
+        category: logs
+      noDataState: OK
+      execErrState: Error
+      isPaused: false
+      data:
+        - refId: A
+          queryType: range
+          relativeTimeRange:
+            from: 300
+            to: 0
+          datasourceUid: loki-icbplays-net
+          model:
+            datasource:
+              type: loki
+              uid: loki-icbplays-net
+            editorMode: code
+            expr: |
+              sum(
+                count_over_time(
+                  {instance="delilah.icbplays.net", service_name="traefik"}
+                  |~ " 5[0-9]{2} "
+                  [5m]
+                )
+              ) or vector(0)
+            hide: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+            queryType: range
+            refId: A
+        - refId: B
+          datasourceUid: __expr__
+          model:
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            reducer: last
+            refId: B
+            type: reduce
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: C
+          datasourceUid: __expr__
+          model:
+            conditions:
+              - evaluator:
+                  params: [2]
+                  type: gt
+                operator:
+                  type: and
+                query:
+                  params: [C]
+                reducer:
+                  params: []
+                  type: last
+                type: query
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: B
+            refId: C
+            type: threshold
+            intervalMs: 1000
+            maxDataPoints: 43200
+
+    # Telemetry pipeline — warning only; does not mean games are down.
+    - uid: delilah-alloy-rw-fail
+      title: DelilahAlloyRemoteWriteFail
+      condition: C
+      for: 15m
+      keepFiringFor: 15m
+      annotations:
+        summary: Alloy on delilah cannot remote-write to Mimir
+        description: >-
+          Metrics/logs shipping is degraded (Failed to send batch). Games may still
+          be healthy. Check auth.cloud.witl.xyz token and mimir.cloud.witl.xyz reachability from delilah.
+      labels:
+        severity: warning
+        host: delilah
+        service: alloy
+        tenant: icbplays-net
+        category: logs
+      noDataState: OK
+      execErrState: Error
+      isPaused: false
+      data:
+        - refId: A
+          queryType: range
+          relativeTimeRange:
+            from: 600
+            to: 0
+          datasourceUid: loki-icbplays-net
+          model:
+            datasource:
+              type: loki
+              uid: loki-icbplays-net
+            editorMode: code
+            expr: |
+              sum(
+                count_over_time(
+                  {instance="delilah.icbplays.net", unit="alloy.service"}
+                  |= "Failed to send batch"
+                  [10m]
+                )
+              ) or vector(0)
+            hide: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+            queryType: range
+            refId: A
+        - refId: B
+          datasourceUid: __expr__
+          model:
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            reducer: last
+            refId: B
+            type: reduce
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: C
+          datasourceUid: __expr__
+          model:
+            conditions:
+              - evaluator:
+                  params: [0]
+                  type: gt
+                operator:
+                  type: and
+                query:
+                  params: [C]
+                reducer:
+                  params: []
+                  type: last
+                type: query
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: B
+            refId: C
+            type: threshold
+            intervalMs: 1000
+            maxDataPoints: 43200
+---
+# Slow / batch checks — evaluate less often; pending absorbs schedule jitter.
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaAlertRuleGroup
+metadata:
+  name: delilah-loki-batch
+spec:
+  folderRef: delilah
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  interval: 15m
+  name: delilah-loki-batch
+  rules:
+    # restic cycle ~6h → 14h window catches a missed run after prior success ages out.
+    - uid: delilah-atm10-backup-miss
+      title: DelilahAtm10BackupMiss
+      condition: C
+      for: 30m
+      keepFiringFor: 1h
+      annotations:
+        summary: ATM10 restic backup on delilah missed its cycle
+        description: >-
+          No "done" from atm10-backups in 14h (expected ~6h). Verify the backup
+          container is running, restic unlock/repo health, and disk space on delilah.
+      labels:
+        severity: critical
+        host: delilah
+        service: atm10-backups
+        tenant: icbplays-net
+        category: logs
+      noDataState: OK
+      execErrState: Error
+      isPaused: false
+      data:
+        - refId: A
+          queryType: range
+          relativeTimeRange:
+            from: 50400
+            to: 0
+          datasourceUid: loki-icbplays-net
+          model:
+            datasource:
+              type: loki
+              uid: loki-icbplays-net
+            editorMode: code
+            expr: |
+              sum(
+                count_over_time(
+                  {instance="delilah.icbplays.net", service_name="atm10-backups"}
+                  |= "done"
+                  [14h]
+                )
+              ) or vector(0)
+            hide: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+            queryType: range
+            refId: A
+        - refId: B
+          datasourceUid: __expr__
+          model:
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            reducer: last
+            refId: B
+            type: reduce
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: C
+          datasourceUid: __expr__
+          model:
+            conditions:
+              - evaluator:
+                  params: [1]
+                  type: lt
+                operator:
+                  type: and
+                query:
+                  params: [C]
+                reducer:
+                  params: []
+                  type: last
+                type: query
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: B
+            refId: C
+            type: threshold
+            intervalMs: 1000
+            maxDataPoints: 43200
+
+    # Daily palworld backup — 36h allows one missed night without false mornings.
+    - uid: delilah-palworld-backup-miss
+      title: DelilahPalworldBackupMiss
+      condition: C
+      for: 1h
+      keepFiringFor: 2h
+      annotations:
+        summary: Palworld backup on delilah missed its daily run
+        description: >-
+          No "Backup created" / "job succeeded" in 36h. Check palworld-server
+          container logs and backup cron inside the image.
+      labels:
+        severity: warning
+        host: delilah
+        service: palworld-server
+        tenant: icbplays-net
+        category: logs
+      noDataState: OK
+      execErrState: Error
+      isPaused: false
+      data:
+        - refId: A
+          queryType: range
+          relativeTimeRange:
+            from: 129600
+            to: 0
+          datasourceUid: loki-icbplays-net
+          model:
+            datasource:
+              type: loki
+              uid: loki-icbplays-net
+            editorMode: code
+            expr: |
+              sum(
+                count_over_time(
+                  {instance="delilah.icbplays.net", service_name="palworld-server"}
+                  |~ "Backup created|job succeeded"
+                  [36h]
+                )
+              ) or vector(0)
+            hide: false
+            intervalMs: 1000
+            maxDataPoints: 43200
+            queryType: range
+            refId: A
+        - refId: B
+          datasourceUid: __expr__
+          model:
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: A
+            reducer: last
+            refId: B
+            type: reduce
+            intervalMs: 1000
+            maxDataPoints: 43200
+        - refId: C
+          datasourceUid: __expr__
+          model:
+            conditions:
+              - evaluator:
+                  params: [1]
+                  type: lt
+                operator:
+                  type: and
+                query:
+                  params: [C]
+                reducer:
+                  params: []
+                  type: last
+                type: query
+            datasource:
+              type: __expr__
+              uid: __expr__
+            expression: B
+            refId: C
+            type: threshold
+            intervalMs: 1000
+            maxDataPoints: 43200

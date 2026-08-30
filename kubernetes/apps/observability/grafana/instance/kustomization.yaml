@@ -3,12 +3,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - ./delilah-alertrules.yaml
+  - ./delilah-folder.yaml
   - ./grafanadatasource.yaml
   - ./grafanadatasource-admin-tenants.yaml
   - ./grafana.yaml
-  - ./poddisruptionbudget.yaml
   - ./istio-dashboards.yaml
   - ./peerauthentication.yaml
+  - ./poddisruptionbudget.yaml
   - ./servicemonitor.yaml
 
 configMapGenerator:
