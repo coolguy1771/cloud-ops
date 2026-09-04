@@ -1,0 +1,10 @@
+---
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: github-status
+spec:
+  type: github
+  address: https://github.com/coolguy1771/cloud-ops
+  secretRef:
+    name: github-status-token-secret

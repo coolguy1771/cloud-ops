@@ -1,0 +1,21 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: github-status
+spec:
+  dependsOn:
+    - name: github-status-secrets
+  interval: 1h
+  path: ./kubernetes/apps/flux-system/github-status/app
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: github-status-app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  targetNamespace: flux-system
+  wait: true
