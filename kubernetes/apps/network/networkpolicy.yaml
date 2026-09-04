@@ -1,0 +1,21 @@
+---
+# Ambient application traffic enters workloads through ztunnel's HBONE port.
+# The cluster-wide host-probe policy separately permits kubelet probes.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ambient-ingress
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "15008"
+              protocol: TCP
+    # Alloy PodMonitor/ServiceMonitor scrapes may address pod IPs directly.
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: observability
+            app.kubernetes.io/name: alloy-metrics

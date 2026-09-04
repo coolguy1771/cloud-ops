@@ -5,5 +5,6 @@ kind: Kustomization
 namespace: authentik
 resources:
   - ./namespace.yaml
+  - ./networkpolicy.yaml
   - ./waypoint.yaml
   - ./authentik/ks.yaml

@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: mimir-system
 resources:
   - ./namespace.yaml
+  - ./networkpolicy.yaml
   - ./waypoint.yaml
   - ./waypoint-hpa.yaml
   - ./mimir/ks.yaml

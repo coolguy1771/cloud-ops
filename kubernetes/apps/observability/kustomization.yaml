@@ -5,6 +5,7 @@ kind: Kustomization
 namespace: observability
 resources:
   - ./namespace.yaml
+  - ./networkpolicy.yaml
   - ./waypoint.yaml
   - ./waypoint-hpa.yaml
   - ./grafana/ks.yaml
