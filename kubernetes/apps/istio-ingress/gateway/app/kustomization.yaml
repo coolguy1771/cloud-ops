@@ -2,12 +2,13 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ./externalsecret.yaml
-  - ./gateway.yaml
-  - ./gateway-options.yaml
-  - ./gateway-requestauthentication.yaml
   - ./authorizationpolicies.yaml
   - ./envoyfilter-hardening.yaml
   - ./envoyfilter-skip-jwt-authentik.yaml
+  - ./envoyfilter-skip-jwt-grafana.yaml
+  - ./externalsecret.yaml
+  - ./gateway-options.yaml
+  - ./gateway-requestauthentication.yaml
+  - ./gateway.yaml
   - ./podmonitor.yaml
   - ./scaledobject.yaml

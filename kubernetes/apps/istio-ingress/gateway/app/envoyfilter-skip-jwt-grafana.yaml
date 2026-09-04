@@ -1,0 +1,32 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/networking.istio.io/envoyfilter_v1alpha3.json
+# Gateway RequestAuthentication validates any Authorization Bearer as JWT.
+# Grafana service account tokens (glsa_*) are opaque, so home-ops grafana-operator
+# calls to grafana.cloud.witl.xyz fail with "Jwt is not in the form of
+# Header.Payload.Signature". Disable jwt_authn on that vhost; Grafana still
+# authenticates via its own auth (oauth / service account / auth.jwt for Kiali
+# in-cluster).
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: gateway-skip-jwt-grafana
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  configPatches:
+    - applyTo: VIRTUAL_HOST
+      match:
+        context: GATEWAY
+        routeConfiguration:
+          vhost:
+            name: grafana.cloud.witl.xyz:443
+      patch:
+        operation: MERGE
+        value:
+          typed_per_filter_config:
+            envoy.filters.http.jwt_authn:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.PerRouteConfig
+              disabled: true
