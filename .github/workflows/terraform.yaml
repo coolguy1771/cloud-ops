@@ -1,0 +1,61 @@
+---
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - infrastructure/terraform/**
+      - .github/workflows/terraform.yaml
+      - .tflint.hcl
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Terraform - Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@4cb9feea73331a35b422df102992a03a44a3bb33 # v6.2.1
+
+      - name: Check formatting
+        run: terraform fmt -check -recursive
+        working-directory: infrastructure/terraform
+
+      - name: Initialize Terraform
+        run: terraform init -backend=false -input=false
+        working-directory: infrastructure/terraform
+
+      - name: Validate Terraform
+        run: terraform validate
+        working-directory: infrastructure/terraform
+
+      - name: Initialize TFLint
+        run: tflint --config="$GITHUB_WORKSPACE/.tflint.hcl" --init
+        working-directory: infrastructure/terraform
+
+      - name: Run TFLint
+        run: tflint --config="$GITHUB_WORKSPACE/.tflint.hcl" --recursive
+        working-directory: infrastructure/terraform
+
+      - name: Scan Terraform configuration
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        with:
+          scan-type: config
+          scan-ref: infrastructure/terraform
+          exit-code: "1"
+          severity: HIGH,CRITICAL

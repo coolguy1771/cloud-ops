@@ -53,7 +53,7 @@ locals {
 
 check "zone_custom_firewall_import_artifact" {
   assert {
-    condition = fileexists(local.imported_rules_file)
+    condition     = fileexists(local.imported_rules_file)
     error_message = <<-EOT
       Missing ${local.imported_rules_file}. Run ./scripts/import-zone-custom-ruleset.sh
       before terraform plan/apply so existing dashboard WAF rules are preserved.
