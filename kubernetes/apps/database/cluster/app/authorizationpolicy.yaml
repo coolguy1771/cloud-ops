@@ -38,6 +38,14 @@ spec:
     - from:
         - source:
             principals:
+              - cluster.local/ns/cnpg-system/sa/cloudnative-pg
+      to:
+        - operation:
+            ports:
+              - "8000"
+    - from:
+        - source:
+            principals:
               - cluster.local/ns/database/sa/postgres
               - cluster.local/ns/database/sa/postgres-pooler-ro
               - cluster.local/ns/database/sa/postgres-pooler-rw
