@@ -1,0 +1,16 @@
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: vpa-recommendations
+spec:
+  dependsOn:
+    - name: vpa
+  interval: 1h
+  path: ./kubernetes/apps/vpa-system/recommendations/app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  wait: true
