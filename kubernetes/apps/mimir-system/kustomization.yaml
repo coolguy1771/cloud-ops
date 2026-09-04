@@ -7,5 +7,5 @@ resources:
   - ./namespace.yaml
   - ./networkpolicy.yaml
   - ./waypoint.yaml
-  - ./waypoint-hpa.yaml
+  - ./waypoint-scaledobject.yaml
   - ./mimir/ks.yaml
