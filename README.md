@@ -63,16 +63,21 @@ Kubernetes GitOps for a Talos cluster on Hetzner Cloud, managed with Flux and bo
 
 ### 1. Provision infrastructure and configure Omni
 
+Remote state and applies use **HCP Terraform VCS** (`coolguy1771` / `cloud-ops`,
+working directory `infrastructure/terraform`). Speculative plans run on PRs;
+merges to `main` auto-apply. Worker MachineClasses live under
+`infrastructure/omni/workers/` and are applied with `omnictl` (see that README)
+before the first apply that manages fsn1 workers.
+
 ```bash
 cd infrastructure/terraform
-cp terraform.tfvars.example terraform.tfvars
-# Set hcloud_token, omni_endpoint, and OMNI_SERVICE_ACCOUNT_KEY
-export OMNI_SERVICE_ACCOUNT_KEY="<base64-service-account-key>"
+# Local CLI against the same workspace (optional)
 terraform init
-terraform apply
+terraform plan
 ```
 
-This provisions Hetzner servers, load balancers, and the Omni cluster (machine sets, node assignments, Talos config patches). See `infrastructure/omni/README.md` for import steps if migrating an existing cluster.
+See `infrastructure/omni/README.md` for import steps if migrating an existing
+cluster. GitHub Actions only validates (fmt/tflint/trivy); it does not apply.
 
 ### 2. Bootstrap the cluster
 

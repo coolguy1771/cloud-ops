@@ -1,0 +1,18 @@
+"metadata":
+  "id": "cloud-ops-hetzner-workers-fsn1"
+  "namespace": "default"
+  "type": "MachineClasses.omni.sidero.dev"
+"spec":
+  "autoprovision":
+    "providerdata": |
+      "firewalls":
+      - "cloud-ops-worker"
+      "labels":
+        "cluster": "cloud-ops"
+        "region": "fsn1"
+        "role": "worker"
+      "location": "fsn1"
+      "networks":
+      - "cloud-ops"
+      "server_type": "cpx32"
+    "providerid": "hetzner"

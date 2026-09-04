@@ -1,0 +1,16 @@
+"metadata":
+  "id": "cloud-ops-workers-nbg1"
+  "labels":
+    "omni.sidero.dev/cluster": "cloud-ops"
+    "omni.sidero.dev/role-worker": ""
+  "namespace": "default"
+  "type": "MachineSets.omni.sidero.dev"
+"spec":
+  "machineallocation":
+    "allocationtype": 0
+    "machinecount": 3
+    "name": "cloud-ops-hetzner-workers-nbg1"
+  "updatestrategy": 1
+  "updatestrategyconfig":
+    "rolling":
+      "maxparallelism": 2

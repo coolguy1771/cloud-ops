@@ -40,9 +40,23 @@ variable "subnet_ip_range" {
 
 # --- Control Plane ---
 variable "control_plane_server_type" {
-  description = "Hetzner server type for control plane nodes"
+  description = "Hetzner server type for all control plane nodes when control_plane_server_types is unset"
   type        = string
-  default     = "cx32"
+  default     = "cx33"
+}
+
+# Prefer this for rolling resizes (set one index at a time). When set, it
+# overrides control_plane_server_type per node.
+variable "control_plane_server_types" {
+  description = "Per-index Hetzner server types for the three control plane nodes"
+  type        = list(string)
+  default     = null
+  nullable    = true
+
+  validation {
+    condition     = var.control_plane_server_types == null || length(var.control_plane_server_types) == 3
+    error_message = "Exactly 3 control plane server types required when control_plane_server_types is set."
+  }
 }
 
 # Spread across two locations for HA; third node re-uses the primary location.
@@ -57,30 +71,21 @@ variable "control_plane_locations" {
   }
 }
 
-# One-time bootstrap aid: Talos machine UUIDs (from `omnictl get machinestatuses
-# -o yaml`, cross-referenced by network.hostname) for control-plane servers
-# that have booted and joined Omni but aren't in a cluster yet. See
-# omni_discover.tf for why this is needed instead of pure discovery. Safe to
-# leave populated after the fact — once assigned, discovery finds them too and
-# the list is deduplicated.
+# Talos machine UUIDs for the control-plane machine set. Required for HCP SaaS
+# remote runs (no omnictl discovery). Get via `omnictl get machinestatuses -o yaml`
+# and cross-reference network.hostname with hcloud_server.control_plane names.
 variable "control_plane_machine_ids" {
-  description = "Known Talos machine UUIDs to bootstrap into the control-plane machine set, for machines not yet discoverable as ClusterMachines"
+  description = "Talos machine UUIDs assigned to the control-plane machine set"
   type        = list(string)
   default     = []
 }
 
 # --- Workers ---
-# Workers are provisioned dynamically by the Hetzner Omni infra provider (see
-# hetzner_infra_provider.tf) via a MachineClass, not as static hcloud_server
-# resources — these variables configure that MachineClass.
-variable "worker_server_type" {
-  description = "Hetzner server type for dynamically auto-provisioned worker nodes"
-  type        = string
-  default     = "cx32"
-}
-
+# MachineClass server_type / provider id live in infrastructure/omni/workers/
+# YAML (omnictl). Terraform only sizes the native fsn1 omni_machine_set.workers
+# from worker_locations + worker_allocation_type — keep counts in sync with YAML.
 variable "worker_locations" {
-  description = "Map of Hetzner location -> worker count. One MachineClass and one omni_machine_set is created per location (ignored per-location if worker_allocation_type is Unlimited, in which case the count is just the initial/minimum size)."
+  description = "Map of Hetzner location -> worker count. fsn1 sizes omni_machine_set.workers; other locations are omnictl-managed machine sets (see infrastructure/omni/workers/)."
   type        = map(number)
   default = {
     fsn1 = 7
@@ -136,13 +141,3 @@ variable "talos_version" {
   default     = "1.13.7"
 }
 
-# --- Hetzner Omni Infra Provider ---
-# See hetzner_infra_provider.tf. The daemon (github.com/coolguy1771/hetzner-infra-provider)
-# runs outside this repo; Terraform only defines the MachineClass and the
-# machine set that draws from it.
-
-variable "hetzner_infra_provider_id" {
-  description = "ID the omni-infra-provider-hetzner daemon is registered under in Omni (must match its --id flag, and the `omnictl infraprovider create <id>` used to register it)"
-  type        = string
-  default     = "hetzner"
-}

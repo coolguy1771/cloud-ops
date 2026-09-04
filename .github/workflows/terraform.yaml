@@ -1,13 +1,31 @@
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Terraform
 
+# Plan/apply are owned by HCP Terraform VCS triggers on workspace coolguy1771/cloud-ops.
+# This workflow only validates formatting, config, TFLint, and Trivy.
 on:
   pull_request:
     branches: [main]
     paths:
-      - infrastructure/terraform/**
+      - infrastructure/terraform/*.tf
+      - infrastructure/terraform/*.hcl
+      - infrastructure/terraform/scripts/**
+      - infrastructure/terraform/terraform.tfvars.example
+      - infrastructure/omni/workers/**
+      - infrastructure/omni/patches/**
       - .github/workflows/terraform.yaml
       - .tflint.hcl
+  push:
+    branches: [main]
+    paths:
+      - infrastructure/terraform/*.tf
+      - infrastructure/terraform/*.hcl
+      - infrastructure/terraform/scripts/**
+      - infrastructure/terraform/terraform.tfvars.example
+      - infrastructure/omni/workers/**
+      - infrastructure/omni/patches/**
+      - .github/workflows/terraform.yaml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.number || github.ref }}

@@ -32,8 +32,8 @@ resource "omni_config_patch" "install_disk" {
     { control_plane = omni_machine_set.control_plane.name },
     { for location, ms in omni_machine_set.workers : "workers_${location}" => ms.name },
     # fsn1 above is native-provider-managed; every other worker location is
-    # applied as raw COSI YAML (see hetzner_infra_provider.tf) where the id
-    # we chose *is* the machine set's name.
+    # applied via omnictl (infrastructure/omni/workers/) where the YAML id
+    # is the machine set's name.
     { for location, name in local.hetzner_worker_machine_set_names : "workers_${location}" => name }
   )
 
@@ -46,6 +46,4 @@ resource "omni_config_patch" "install_disk" {
   }
 
   data = file("${local.omni_patch_dir}/install-disk.yaml")
-
-  depends_on = [null_resource.hetzner_worker_machine_set]
 }

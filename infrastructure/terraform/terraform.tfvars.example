@@ -1,7 +1,12 @@
-# Copy to terraform.tfvars and fill in values.
-# Never commit terraform.tfvars — it contains secrets.
+# Copy values into the HCP Terraform workspace variables (preferred) or a local
+# terraform.tfvars for CLI use. Never commit terraform.tfvars — it contains secrets.
+#
+# HCP: org coolguy1771 / workspace cloud-ops (see versions.tf cloud block).
+# Provider secrets belong in the workspace env: TF_VAR_hcloud_token,
+# TF_VAR_omni_service_account_key, TF_VAR_omni_endpoint (or HCLOUD_TOKEN /
+# OMNI_* equivalents supported by the providers).
 
-hcloud_token = "your-hetzner-api-token"
+# hcloud_token / omni_service_account_key: set in HCP workspace (sensitive)
 
 # Hetzner snapshot ID of the Omni Talos image.
 # Steps to get it:
@@ -13,36 +18,31 @@ talos_image_id = "123456789"
 cluster_name = "cloud-ops"
 
 # Spread control planes across two locations for HA:
-control_plane_locations   = ["fsn1", "nbg1", "fsn1"]
-control_plane_server_type = "cx32"
+control_plane_locations = ["fsn1", "nbg1", "fsn1"]
+# Uniform type, or use control_plane_server_types for rolling resize:
+control_plane_server_type = "cx33"
+# control_plane_server_types = ["cx33", "cx33", "cx33"]
 
-# Workers are provisioned dynamically by the Hetzner Omni infra provider
-# (see hetzner_infra_provider.tf) — these configure the MachineClasses it
-# uses, not a static hcloud_server fleet. One MachineClass + one
-# omni_machine_set is created per location below, each sized independently.
-worker_server_type = "cx32"
+# Required for HCP SaaS runs (no omnictl discovery). From:
+#   omnictl get machinestatuses -o yaml
+control_plane_machine_ids = [
+  "00000000-0000-0000-0000-000000000001",
+  "00000000-0000-0000-0000-000000000002",
+  "00000000-0000-0000-0000-000000000003",
+]
+
+# fsn1 worker count is applied by Terraform (omni_machine_set.workers).
+# MachineClasses + non-fsn1 sets: infrastructure/omni/workers/ (omnictl apply).
+# Edit server_type / providerid in that YAML; keep locations counts in sync.
 worker_locations = {
-  fsn1 = 4
-  nbg1 = 2
-  hel1 = 1
+  fsn1 = 2
+  nbg1 = 3
+  hel1 = 2
 }
-worker_allocation_type = "Static" # or "Unlimited" to autoscale to cluster demand (per location)
+worker_allocation_type = "Static" # or "Unlimited"
 
-# --- Omni (cluster management via Terraform provider) ---
-# Create a key: omnictl serviceaccount create --use-user-role=false <name>
+# --- Omni ---
 omni_endpoint = "https://your-instance.omni.siderolabs.io"
-# omni_service_account_key = "..."  # or export OMNI_SERVICE_ACCOUNT_KEY
 
 kubernetes_version = "1.36.1"
 talos_version      = "1.13.7"
-
-# Control plane machines are discovered from Omni via omnictl labels (no
-# machine classes) — workers are allocated dynamically instead, see above.
-# Assign control plane nodes with: omnictl get clustermachines -l omni.sidero.dev/cluster=cloud-ops
-
-# --- Hetzner Omni Infra Provider ---
-# One-time manual step against your Omni instance (mints a credential, not
-# automated by Terraform): omnictl infraprovider create hetzner
-# Run the daemon (github.com/coolguy1771/hetzner-infra-provider) with the
-# resulting key + your hcloud_token — it runs outside this repo.
-hetzner_infra_provider_id = "hetzner"
