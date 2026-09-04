@@ -4,8 +4,10 @@ kind: GithubAccessToken
 metadata:
   name: github-access-token
 spec:
-  appID: "${GITHUB_APP_ID}"
-  installID: "${GITHUB_INSTALLATION_ID}"
+  # The substitution Secret wraps numeric IDs in YAML quotes so the CRD
+  # decoder retains their required string type after postBuild substitution.
+  appID: ${GITHUB_APP_ID}
+  installID: ${GITHUB_INSTALLATION_ID}
   repositories:
     - cloud-ops
   permissions:
