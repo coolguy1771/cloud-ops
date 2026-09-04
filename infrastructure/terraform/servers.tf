@@ -24,8 +24,8 @@ resource "hcloud_server" "control_plane" {
   }
 
   # Prevent accidental deletion in production.
-  delete_protection  = false
-  rebuild_protection = false
+  delete_protection  = true
+  rebuild_protection = true
 
   depends_on = [hcloud_network_subnet.this]
 }

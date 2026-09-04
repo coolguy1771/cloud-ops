@@ -1,6 +1,15 @@
 terraform {
   required_version = ">= 1.6"
 
+  cloud {
+    organization = "home-ops"
+
+    workspaces {
+      project = "cloud-ops"
+      name    = "cloud-ops"
+    }
+  }
+
   required_providers {
     external = {
       source  = "hashicorp/external"
@@ -23,10 +32,6 @@ terraform {
       version = "~> 2.5"
     }
   }
-
-  # Uncomment and configure a remote backend for team use:
-  # backend "s3" { ... }     # S3-compatible (MinIO, Cloudflare R2, etc.)
-  # backend "http" { ... }   # GitLab-managed state
 }
 
 provider "hcloud" {
@@ -34,7 +39,7 @@ provider "hcloud" {
 }
 
 provider "omni" {
-  endpoint             = var.omni_endpoint
-  service_account_key  = var.omni_service_account_key
+  endpoint                 = var.omni_endpoint
+  service_account_key      = var.omni_service_account_key
   insecure_skip_tls_verify = var.omni_insecure_skip_tls_verify
 }

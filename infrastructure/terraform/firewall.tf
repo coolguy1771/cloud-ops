@@ -11,7 +11,7 @@ resource "hcloud_firewall" "control_plane" {
     direction  = "in"
     protocol   = "tcp"
     port       = "6443"
-    source_ips = ["0.0.0.0/0", "::/0"]
+    source_ips = [var.network_ip_range]
   }
 
   # Talos API — omnictl / talosctl
@@ -19,7 +19,7 @@ resource "hcloud_firewall" "control_plane" {
     direction  = "in"
     protocol   = "tcp"
     port       = "50000"
-    source_ips = ["0.0.0.0/0", "::/0"]
+    source_ips = [var.network_ip_range]
   }
 
   # etcd — peer and client traffic, cluster-internal only
@@ -67,7 +67,7 @@ resource "hcloud_firewall" "worker" {
     direction  = "in"
     protocol   = "tcp"
     port       = "50000"
-    source_ips = ["0.0.0.0/0", "::/0"]
+    source_ips = [var.network_ip_range]
   }
 
   # Kubelet — cluster-internal only
@@ -83,7 +83,7 @@ resource "hcloud_firewall" "worker" {
     direction  = "in"
     protocol   = "tcp"
     port       = "30000-32767"
-    source_ips = ["0.0.0.0/0", "::/0"]
+    source_ips = [var.network_ip_range]
   }
 
   # Cilium health — cluster-internal only

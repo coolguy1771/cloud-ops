@@ -2,6 +2,7 @@ resource "hcloud_load_balancer" "control_plane" {
   name               = "${var.cluster_name}-control-plane"
   load_balancer_type = "lb11"
   network_zone       = var.network_zone
+  delete_protection  = true
 
   labels = {
     cluster = var.cluster_name
@@ -11,8 +12,9 @@ resource "hcloud_load_balancer" "control_plane" {
 
 # Attach LB to the private network so it can reach nodes via private IPs.
 resource "hcloud_load_balancer_network" "control_plane" {
-  load_balancer_id = hcloud_load_balancer.control_plane.id
-  network_id       = hcloud_network.this.id
+  load_balancer_id        = hcloud_load_balancer.control_plane.id
+  network_id              = hcloud_network.this.id
+  enable_public_interface = false
 
   depends_on = [hcloud_network_subnet.this]
 }
