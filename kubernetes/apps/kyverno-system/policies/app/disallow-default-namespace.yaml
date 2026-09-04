@@ -1,0 +1,33 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-default-namespace
+spec:
+  admission: true
+  background: true
+  failurePolicy: Ignore
+  validationFailureAction: Enforce
+  rules:
+    - name: require-application-namespace
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+                - Job
+                - CronJob
+                - ReplicaSet
+                - ReplicationController
+                - external-secrets.io/*/ExternalSecret
+                - external-secrets.io/*/PushSecret
+                - external-secrets.io/*/SecretStore
+              namespaces:
+                - default
+      validate:
+        allowExistingViolations: false
+        message: The default namespace is reserved; choose an application namespace.
+        deny: {}

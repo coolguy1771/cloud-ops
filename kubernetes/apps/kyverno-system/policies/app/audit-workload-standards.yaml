@@ -1,0 +1,80 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: audit-workload-standards
+spec:
+  admission: true
+  background: true
+  failurePolicy: Ignore
+  validationFailureAction: Audit
+  rules:
+    - name: require-container-requests
+      match: &workloads
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude: &system-namespaces
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - istio-system
+                - kyverno-system
+                - cnpg-system
+                - cert-manager
+                - external-secrets
+                - flux-system
+      validate:
+        allowExistingViolations: true
+        message: Containers must define CPU and memory requests.
+        foreach:
+          - list: request.object.spec.containers
+            pattern:
+              resources:
+                requests:
+                  cpu: "?*"
+                  memory: "?*"
+    - name: require-immutable-image-reference
+      match: *workloads
+      exclude: *system-namespaces
+      validate:
+        allowExistingViolations: true
+        message: Container images must use an explicit non-latest tag or digest.
+        foreach:
+          - list: request.object.spec.containers
+            deny:
+              conditions:
+                any:
+                  - key: "{{ regex_match('^.+(:[^/:]+|@sha256:[a-f0-9]{64})$', element.image) }}"
+                    operator: NotEquals
+                    value: true
+                  - key: "{{ regex_match('^.+:latest(@sha256:[a-f0-9]{64})?$', element.image) }}"
+                    operator: Equals
+                    value: true
+    - name: require-container-security-context
+      match: *workloads
+      exclude: *system-namespaces
+      validate:
+        allowExistingViolations: true
+        message: Containers must disable privilege escalation and drop all capabilities.
+        foreach:
+          - list: request.object.spec.containers
+            pattern:
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+    - name: require-runtime-default-seccomp
+      match: *workloads
+      exclude: *system-namespaces
+      validate:
+        allowExistingViolations: true
+        message: Pods must use the RuntimeDefault seccomp profile.
+        pattern:
+          spec:
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault

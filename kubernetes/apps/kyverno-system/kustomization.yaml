@@ -5,3 +5,4 @@ namespace: kyverno-system
 resources:
   - ./namespace.yaml
   - ./kyverno/ks.yaml
+  - ./policies/ks.yaml
