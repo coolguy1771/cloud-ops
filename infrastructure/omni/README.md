@@ -1,6 +1,7 @@
 # Cluster lifecycle is managed by Terraform using the [official Omni provider](https://registry.terraform.io/providers/siderolabs/omni/latest/docs)
-# via HCP Terraform (org `coolguy1771`, workspace `cloud-ops`). Stock SaaS agents
-# run plan/apply; they do not have `omnictl`.
+# via **HCP Terraform VCS** (org `coolguy1771`, workspace `cloud-ops`, working
+# directory `infrastructure/terraform`). Stock SaaS agents run plan/apply on
+# Git changes; they do not have `omnictl`.
 
 | Path | Purpose |
 |------|---------|
@@ -19,6 +20,14 @@ the Omni UI or via cluster templates — changes will be overwritten on the next
 apply. Worker MachineClasses / non-fsn1 sets are owned by the YAML in `workers/`
 instead.
 
+## HCP VCS workflow
+
+- PRs that touch `infrastructure/terraform/**` (excluding `cloudflare/`) or
+  `infrastructure/omni/patches/**` get a speculative plan in HCP.
+- Merges to `main` auto-apply.
+- Workspace variables hold tokens and tfvars (not git).
+- GitHub Actions only runs fmt / validate / TFLint / Trivy.
+
 ## Workers (`omnictl`)
 
 See [workers/README.md](workers/README.md). Apply MachineClass YAML before the
@@ -34,9 +43,7 @@ export OMNI_SERVICE_ACCOUNT_KEY="<base64-key>"
 export OMNI_ENDPOINT="https://your-instance.omni.siderolabs.io"
 ```
 
-For HCP remote runs, set the same values as **workspace environment variables**
-(`TF_VAR_omni_service_account_key`, `TF_VAR_omni_endpoint`, `TF_VAR_hcloud_token`,
-plus non-secret tfvars such as `talos_image_id` and `control_plane_machine_ids`).
+Remote runs read the same values from **workspace variables**.
 
 ## Import existing cluster
 
@@ -63,5 +70,5 @@ omnictl get machinestatuses -o yaml
 
 ## Upgrade Talos (via Terraform / HCP)
 
-Bump `kubernetes_version` / `talos_version` workspace variables (or tfvars), open
-a PR for the speculative plan, then merge or `workflow_dispatch` to apply.
+Bump `kubernetes_version` / `talos_version` workspace variables, open a PR for
+the speculative plan, then merge to auto-apply.
