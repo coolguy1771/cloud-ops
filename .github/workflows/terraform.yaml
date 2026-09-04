@@ -1,20 +1,43 @@
 ---
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Terraform
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - infrastructure/terraform/**
+      - infrastructure/terraform/*.tf
+      - infrastructure/terraform/*.hcl
+      - infrastructure/terraform/scripts/**
+      - infrastructure/terraform/terraform.tfvars.example
+      - infrastructure/omni/workers/**
+      - infrastructure/omni/patches/**
       - .github/workflows/terraform.yaml
       - .tflint.hcl
+  push:
+    branches: [main]
+    paths:
+      - infrastructure/terraform/*.tf
+      - infrastructure/terraform/*.hcl
+      - infrastructure/terraform/scripts/**
+      - infrastructure/terraform/terraform.tfvars.example
+      - infrastructure/omni/workers/**
+      - infrastructure/omni/patches/**
+      - .github/workflows/terraform.yaml
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number || github.ref }}
-  cancel-in-progress: true
+  group: terraform-cloud-ops
+  cancel-in-progress: false
 
 permissions:
   contents: read
+  pull-requests: write
+
+env:
+  TF_CLOUD_ORGANIZATION: coolguy1771
+  TF_WORKSPACE: cloud-ops
+  CONFIG_DIRECTORY: infrastructure/terraform
 
 jobs:
   validate:
@@ -59,3 +82,119 @@ jobs:
           scan-ref: infrastructure/terraform
           exit-code: "1"
           severity: HIGH,CRITICAL
+
+  plan:
+    name: Terraform - Plan
+    needs: validate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Upload configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@8e08d1ba957673f5fbf971a22b3219639dc45661 # v1.3.2
+        id: upload
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+          speculative: true
+
+      - name: Create plan-only run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@8e08d1ba957673f5fbf971a22b3219639dc45661 # v1.3.2
+        id: run
+        continue-on-error: true
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
+          plan_only: true
+          message: "GitHub Actions speculative plan"
+
+      - name: Plan output
+        uses: hashicorp/tfc-workflows-github/actions/plan-output@8e08d1ba957673f5fbf971a22b3219639dc45661 # v1.3.2
+        id: plan
+        if: steps.run.outcome == 'success' || steps.run.outcome == 'failure'
+        with:
+          plan: ${{ steps.run.outputs.plan_id }}
+
+      - name: Comment plan on PR
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        if: always() && steps.run.outputs.run_link != ''
+        env:
+          PLAN_ADD: ${{ steps.plan.outputs.add }}
+          PLAN_CHANGE: ${{ steps.plan.outputs.change }}
+          PLAN_DESTROY: ${{ steps.plan.outputs.destroy }}
+          RUN_LINK: ${{ steps.run.outputs.run_link }}
+          TF_WORKSPACE_NAME: ${{ env.TF_WORKSPACE }}
+        with:
+          script: |
+            const output = [
+              `#### HCP Terraform plan (\`${process.env.TF_WORKSPACE_NAME}\`)`,
+              `- Add: \`${process.env.PLAN_ADD}\` Change: \`${process.env.PLAN_CHANGE}\` Destroy: \`${process.env.PLAN_DESTROY}\``,
+              `- [Run](${process.env.RUN_LINK})`,
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '#### HCP Terraform plan';
+            const existing = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: output,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: output,
+              });
+            }
+
+      - name: Fail if plan failed
+        if: steps.run.outcome == 'failure'
+        run: exit 1
+
+  apply:
+    name: Terraform - Apply
+    needs: validate
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: terraform
+    env:
+      TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Upload configuration
+        uses: hashicorp/tfc-workflows-github/actions/upload-configuration@8e08d1ba957673f5fbf971a22b3219639dc45661 # v1.3.2
+        id: upload
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          directory: ${{ env.CONFIG_DIRECTORY }}
+
+      - name: Create run
+        uses: hashicorp/tfc-workflows-github/actions/create-run@8e08d1ba957673f5fbf971a22b3219639dc45661 # v1.3.2
+        id: run
+        with:
+          workspace: ${{ env.TF_WORKSPACE }}
+          configuration_version: ${{ steps.upload.outputs.configuration_version_id }}
+          message: "GitHub Actions apply"
+
+      - name: Apply run
+        uses: hashicorp/tfc-workflows-github/actions/apply-run@8e08d1ba957673f5fbf971a22b3219639dc45661 # v1.3.2
+        with:
+          run: ${{ steps.run.outputs.run_id }}
+          comment: "Approved via GitHub Actions"
