@@ -14,6 +14,15 @@ spec:
         - ports:
             - port: "15008"
               protocol: TCP
+    # Kiali runs outside ambient and queries Mimir's Prometheus API directly.
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: istio-system
+            app.kubernetes.io/name: kiali
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
     # Alloy PodMonitor/ServiceMonitor scrapes may address pod IPs directly.
     - fromEndpoints:
         - matchLabels:
