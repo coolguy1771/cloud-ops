@@ -81,18 +81,11 @@ variable "control_plane_machine_ids" {
 }
 
 # --- Workers ---
-# Workers are provisioned dynamically by the Hetzner Omni infra provider (see
-# hetzner_infra_provider.tf) via a MachineClass applied with omnictl from
-# infrastructure/omni/workers/ — these variables configure the fsn1
-# omni_machine_set.workers size and must stay in sync with the YAML.
-variable "worker_server_type" {
-  description = "Hetzner server type for dynamically auto-provisioned worker nodes (document in omni/workers YAML)"
-  type        = string
-  default     = "cpx32"
-}
-
+# MachineClass server_type / provider id live in infrastructure/omni/workers/
+# YAML (omnictl). Terraform only sizes the native fsn1 omni_machine_set.workers
+# from worker_locations + worker_allocation_type — keep counts in sync with YAML.
 variable "worker_locations" {
-  description = "Map of Hetzner location -> worker count. One MachineClass and one omni_machine_set is created per location (ignored per-location if worker_allocation_type is Unlimited, in which case the count is just the initial/minimum size)."
+  description = "Map of Hetzner location -> worker count. fsn1 sizes omni_machine_set.workers; other locations are omnictl-managed machine sets (see infrastructure/omni/workers/)."
   type        = map(number)
   default = {
     fsn1 = 7
@@ -148,13 +141,3 @@ variable "talos_version" {
   default     = "1.13.7"
 }
 
-# --- Hetzner Omni Infra Provider ---
-# See hetzner_infra_provider.tf. The daemon (github.com/coolguy1771/hetzner-infra-provider)
-# runs outside this repo; Terraform only defines the MachineClass and the
-# machine set that draws from it.
-
-variable "hetzner_infra_provider_id" {
-  description = "ID the omni-infra-provider-hetzner daemon is registered under in Omni (must match its --id flag, and the `omnictl infraprovider create <id>` used to register it)"
-  type        = string
-  default     = "hetzner"
-}

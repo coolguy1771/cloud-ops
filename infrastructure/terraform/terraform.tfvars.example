@@ -33,8 +33,7 @@ control_plane_machine_ids = [
 
 # fsn1 worker count is applied by Terraform (omni_machine_set.workers).
 # MachineClasses + non-fsn1 sets: infrastructure/omni/workers/ (omnictl apply).
-# Keep worker_server_type / locations in sync with that YAML.
-worker_server_type = "cpx32"
+# Edit server_type / providerid in that YAML; keep locations counts in sync.
 worker_locations = {
   fsn1 = 2
   nbg1 = 3
@@ -47,8 +46,3 @@ omni_endpoint = "https://your-instance.omni.siderolabs.io"
 
 kubernetes_version = "1.36.1"
 talos_version      = "1.13.7"
-
-# --- Hetzner Omni Infra Provider ---
-# omnictl infraprovider create hetzner
-# Run coolguy1771/hetzner-infra-provider with the minted key + hcloud token.
-hetzner_infra_provider_id = "hetzner"
