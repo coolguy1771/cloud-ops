@@ -21,6 +21,12 @@ All seven worker nodes were replaced successfully, but two healthy replacement n
 - Confirm `postgres-1`, `postgres-2`, and `postgres-3` are running and ready.
 - Confirm the CNPG Cluster reports three ready instances.
 
+## WAL loss recovery
+
+Deleting all three WAL PVCs removes the active PostgreSQL WAL for every instance. Empty replacement claims cannot be attached safely to the existing data directories, so recovery uses the latest completed base backup plus archived WAL from backup server `postgres-recovered`. The replacement cluster keeps the same Kubernetes name and writes future backups to the distinct server name `postgres-recovered-20260907`, preserving the source chain.
+
+The operator-owned Cluster and remaining `pgdata` claims are deleted only after Flux is suspended. Flux then recreates the same Cluster from Git, provisioning fresh `20Gi` WAL claims and restoring the databases through the Barman Cloud plugin.
+
 ## Rollback
 
-Revert the selector commit if reconciliation rejects the manifest. Re-cordon a worker only if it becomes unhealthy; no storage objects are changed by this repair.
+Revert the scheduling commits if reconciliation rejects the manifest. Once the broken data volumes are deleted, rollback means another restore from the preserved `postgres-recovered` backup chain; the deleted volumes cannot be recovered through Kubernetes.

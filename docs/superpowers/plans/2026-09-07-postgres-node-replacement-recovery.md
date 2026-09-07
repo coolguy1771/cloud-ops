@@ -156,3 +156,65 @@ kubectl -n database get pods -l cnpg.io/podRole=instance -o wide
 ```
 
 Expected: the Cluster reports three ready instances and each Postgres instance runs where its existing volume affinity permits.
+
+### Task 4: Recover after loss of every WAL volume
+
+**Files:**
+- Modify: `kubernetes/apps/database/cluster/app/cluster.yaml:73-106`
+
+- [ ] **Step 1: Preserve the backup source and separate future archives**
+
+Configure the external recovery source with:
+
+```yaml
+serverName: postgres-recovered
+```
+
+Configure the active archiver with:
+
+```yaml
+serverName: postgres-recovered-20260907
+```
+
+Expected: recovery reads the completed `postgres-recovered` chain without writing new backups into it.
+
+- [ ] **Step 2: Validate, commit, and push the recovery configuration**
+
+```bash
+kustomize build kubernetes/apps/database/cluster/app
+git add kubernetes/apps/database/cluster/app/cluster.yaml docs/superpowers/
+git commit -m "fix(database): restore postgres after WAL loss"
+git push origin main
+```
+
+Expected: the manifests build and `main` contains the recovery source change.
+
+- [ ] **Step 3: Suspend Flux and remove the unusable cluster storage**
+
+```bash
+flux suspend kustomization postgres --namespace database
+kubectl -n database delete cluster postgres --wait=true
+kubectl -n database delete pvc postgres-1 postgres-2 postgres-3 --ignore-not-found --wait=true
+```
+
+Expected: the Cluster, instance pods, and all six old claims are absent. Backup CRs, secrets, certificates, ObjectStore, and ScheduledBackup remain.
+
+- [ ] **Step 4: Resume Flux and initiate recovery**
+
+```bash
+flux resume kustomization postgres --namespace database
+flux reconcile kustomization postgres --namespace database --with-source
+```
+
+Expected: Flux applies the recovery revision and CNPG creates a new `postgres` Cluster with fresh data and WAL claims.
+
+- [ ] **Step 5: Verify recovery**
+
+```bash
+kubectl -n database wait --for=condition=Ready cluster/postgres --timeout=30m
+kubectl -n database get cluster postgres
+kubectl -n database get pods -l cnpg.io/podRole=instance -o wide
+kubectl -n database get pvc
+```
+
+Expected: the Cluster reports three ready instances, six claims are bound, every WAL claim has at least `20Gi`, and continuous archiving is healthy.

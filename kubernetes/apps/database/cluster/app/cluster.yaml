@@ -76,7 +76,7 @@ spec:
         name: barman-cloud.cloudnative-pg.io
         parameters:
           barmanObjectName: postgres-backup
-          serverName: postgres
+          serverName: postgres-recovered
 
   managed:
     roles:
@@ -103,7 +103,7 @@ spec:
       isWALArchiver: true
       parameters:
         barmanObjectName: postgres-backup
-        serverName: postgres-recovered
+        serverName: postgres-recovered-20260907
 
   # PodMonitor managed in podmonitor.yaml; scraped by Alloy prometheus.operator.podmonitors
   monitoring:
