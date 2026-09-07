@@ -122,6 +122,7 @@ spec:
       labelSelector:
         matchLabels:
           cnpg.io/cluster: postgres
+          cnpg.io/podRole: instance
     # Hard spread across Hetzner regions (fsn1/nbg1/hel1, one per instance) —
     # labels set by hcloud-ccm. DoNotSchedule: with instances == regions this
     # should always be satisfiable; if a region briefly lacks capacity a
@@ -132,3 +133,4 @@ spec:
       labelSelector:
         matchLabels:
           cnpg.io/cluster: postgres
+          cnpg.io/podRole: instance
