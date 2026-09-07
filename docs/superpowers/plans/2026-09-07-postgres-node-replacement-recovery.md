@@ -4,7 +4,7 @@
 
 **Goal:** Restore Postgres scheduling after worker replacement without changing or recreating persistent storage.
 
-**Architecture:** Narrow CloudNativePG topology spread selectors to database instance pods so PgBouncer does not distort placement. Restore healthy worker capacity operationally by removing stale cordons, then let Flux apply the Git-owned manifest and verify CNPG readiness.
+**Architecture:** Narrow CloudNativePG topology spread selectors to database instance pods so PgBouncer does not distort placement, and make regional spreading preferred so region-pinned volumes take precedence. Restore healthy worker capacity operationally by removing stale cordons, then let Flux apply the Git-owned manifest and verify CNPG readiness.
 
 **Tech Stack:** Kubernetes, Flux, CloudNativePG, Kustomize, YAML
 
@@ -25,7 +25,7 @@ yq -e '[.spec.topologySpreadConstraints[] | .labelSelector.matchLabels."cnpg.io/
 
 Expected: exit status 1 because both selectors currently omit `cnpg.io/podRole`.
 
-- [ ] **Step 2: Add the instance role to both selectors**
+- [ ] **Step 2: Add the instance role to both selectors and soften regional spreading**
 
 Each topology spread constraint must contain:
 
@@ -34,6 +34,12 @@ labelSelector:
   matchLabels:
     cnpg.io/cluster: postgres
     cnpg.io/podRole: instance
+```
+
+The constraint with `topologyKey: topology.kubernetes.io/region` must use:
+
+```yaml
+whenUnsatisfiable: ScheduleAnyway
 ```
 
 - [ ] **Step 3: Re-run the selector assertion**
@@ -105,7 +111,7 @@ Expected: `main` is accepted by `origin`.
 - [ ] **Step 2: Reconcile the database Kustomization through Flux**
 
 ```bash
-flux reconcile kustomization database-cluster --with-source
+flux reconcile kustomization postgres --namespace database --with-source
 ```
 
 Expected: source and Kustomization reconciliation succeed.
@@ -133,4 +139,4 @@ kubectl -n database get cluster postgres
 kubectl -n database get pods -l cnpg.io/podRole=instance -o wide
 ```
 
-Expected: the Cluster reports three ready instances and each Postgres instance runs in the region matching its existing volume affinity.
+Expected: the Cluster reports three ready instances and each Postgres instance runs where its existing volume affinity permits.

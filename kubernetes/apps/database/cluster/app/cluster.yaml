@@ -123,13 +123,12 @@ spec:
         matchLabels:
           cnpg.io/cluster: postgres
           cnpg.io/podRole: instance
-    # Hard spread across Hetzner regions (fsn1/nbg1/hel1, one per instance) —
-    # labels set by hcloud-ccm. DoNotSchedule: with instances == regions this
-    # should always be satisfiable; if a region briefly lacks capacity a
-    # rescheduled instance can go Pending until it's available again.
+    # Prefer spreading across Hetzner regions, but existing hcloud volumes are
+    # region-pinned. Volume node affinity must take precedence during recovery
+    # and rescheduling so a healthy instance is not left Pending indefinitely.
     - maxSkew: 1
       topologyKey: topology.kubernetes.io/region
-      whenUnsatisfiable: DoNotSchedule
+      whenUnsatisfiable: ScheduleAnyway
       labelSelector:
         matchLabels:
           cnpg.io/cluster: postgres

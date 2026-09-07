@@ -7,7 +7,7 @@ All seven worker nodes were replaced successfully, but two healthy replacement n
 ## Design
 
 1. Restrict both database topology spread constraints to pods carrying both `cnpg.io/cluster: postgres` and `cnpg.io/podRole: instance`.
-2. Preserve the hard one-instance-per-region policy and all existing PVCs.
+2. Make regional spreading preferred because the existing region-pinned PVCs occupy two regions rather than all three. Volume node affinity takes precedence without recreating storage.
 3. Uncordon the two healthy replacement workers after confirming Omni and Kubernetes report them ready.
 4. Reconcile the database Flux Kustomization and verify all three database instances become ready.
 
