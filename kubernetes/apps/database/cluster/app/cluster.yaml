@@ -35,7 +35,7 @@ spec:
     size: 20Gi
     storageClass: hcloud-volumes
   walStorage:
-    size: 8Gi
+    size: 20Gi
     storageClass: hcloud-volumes
 
   resources:

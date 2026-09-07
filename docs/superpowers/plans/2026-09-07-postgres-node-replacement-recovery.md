@@ -2,18 +2,18 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Restore Postgres scheduling after worker replacement without changing or recreating persistent storage.
+**Goal:** Restore Postgres after worker replacement without deleting or recreating persistent storage.
 
-**Architecture:** Narrow CloudNativePG topology spread selectors to database instance pods so PgBouncer does not distort placement, and make regional spreading preferred so region-pinned volumes take precedence. Restore healthy worker capacity operationally by removing stale cordons, then let Flux apply the Git-owned manifest and verify CNPG readiness.
+**Architecture:** Narrow CloudNativePG topology spread selectors to database instance pods so PgBouncer does not distort placement, make regional spreading preferred so region-pinned volumes take precedence, and expand WAL volumes through the CSI driver's supported in-place expansion. Restore healthy worker capacity operationally by removing stale cordons, then let Flux apply the Git-owned manifest and verify CNPG readiness.
 
 **Tech Stack:** Kubernetes, Flux, CloudNativePG, Kustomize, YAML
 
 ---
 
-### Task 1: Correct CloudNativePG topology selection
+### Task 1: Correct CloudNativePG scheduling and WAL capacity
 
 **Files:**
-- Modify: `kubernetes/apps/database/cluster/app/cluster.yaml:118-134`
+- Modify: `kubernetes/apps/database/cluster/app/cluster.yaml:34-39,118-136`
 
 - [ ] **Step 1: Run a failing selector assertion**
 
@@ -42,6 +42,14 @@ The constraint with `topologyKey: topology.kubernetes.io/region` must use:
 whenUnsatisfiable: ScheduleAnyway
 ```
 
+WAL storage must request an expandable capacity:
+
+```yaml
+walStorage:
+  size: 20Gi
+  storageClass: hcloud-volumes
+```
+
 - [ ] **Step 3: Re-run the selector assertion**
 
 Run the command from Step 1.
@@ -56,7 +64,7 @@ Run:
 kustomize build kubernetes/apps/database/cluster/app
 ```
 
-Expected: exit status 0 and a rendered `postgresql.cnpg.io/v1` Cluster containing both instance-only topology selectors.
+Expected: exit status 0 and a rendered `postgresql.cnpg.io/v1` Cluster containing both instance-only topology selectors, preferred regional spreading, and `20Gi` WAL storage.
 
 - [ ] **Step 5: Commit the correction**
 
@@ -122,9 +130,17 @@ Expected: source and Kustomization reconciliation succeed.
 kubectl -n database get cluster postgres -o yaml
 ```
 
-Expected: both `spec.topologySpreadConstraints` entries select `cnpg.io/podRole: instance`.
+Expected: both `spec.topologySpreadConstraints` entries select `cnpg.io/podRole: instance`, regional spreading uses `ScheduleAnyway`, and `spec.walStorage.size` is `20Gi`.
 
-- [ ] **Step 4: Wait for all database instances**
+- [ ] **Step 4: Verify WAL PVC expansion**
+
+```bash
+kubectl -n database get pvc postgres-1-wal postgres-2-wal postgres-3-wal
+```
+
+Expected: all three claims are `Bound`, request `20Gi`, and report at least `20Gi` capacity.
+
+- [ ] **Step 5: Wait for all database instances**
 
 ```bash
 kubectl -n database wait --for=condition=Ready pod/postgres-1 pod/postgres-2 pod/postgres-3 --timeout=15m
@@ -132,7 +148,7 @@ kubectl -n database wait --for=condition=Ready pod/postgres-1 pod/postgres-2 pod
 
 Expected: all three pods satisfy `Ready`.
 
-- [ ] **Step 5: Verify CNPG and pod placement**
+- [ ] **Step 6: Verify CNPG and pod placement**
 
 ```bash
 kubectl -n database get cluster postgres
