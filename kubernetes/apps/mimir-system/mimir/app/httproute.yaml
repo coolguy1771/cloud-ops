@@ -35,7 +35,13 @@ spec:
           port: 8080
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/gateway.networking.k8s.io/httproute_v1.json
-# HTTPRoute for Mimir read/query paths (requires mimir:read scope)
+# HTTPRoute for Mimir read/query/operational paths (mimir:read scope).
+# Only non-destructive endpoints are routed — shutdown and delete operations
+# (ingester/shutdown, ingester/prepare-*, store-gateway/prepare-shutdown,
+# ruler/delete_tenant_config, multitenant_alertmanager/delete_tenant_config,
+# compactor/delete_tenant, DELETE on /prometheus/config/v1/rules/* and
+# /api/v1/alerts) are intentionally NOT routed.
+# https://grafana.com/docs/mimir/latest/references/http-api/
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -53,18 +59,122 @@ spec:
     - mimir.cloud.witl.xyz
   rules:
     - matches:
+        # Query-frontend + ruler read (Prometheus-compatible API under /prometheus)
         - path:
             type: PathPrefix
             value: /prometheus
+        # Ruler read-only (ring, rule_groups — no delete_tenant_config)
         - path:
             type: PathPrefix
-            value: /ruler
+            value: /ruler/ring
+        - path:
+            type: PathPrefix
+            value: /ruler/rule_groups
+        # Alertmanager UI + buildinfo
         - path:
             type: PathPrefix
             value: /alertmanager
+        # Alertmanager operational (status, configs, ring — no delete_tenant_config)
         - path:
             type: PathPrefix
-            value: /multitenant_alertmanager
+            value: /multitenant_alertmanager/status
+        - path:
+            type: PathPrefix
+            value: /multitenant_alertmanager/configs
+        - path:
+            type: PathPrefix
+            value: /multitenant_alertmanager/ring
+        # Alertmanager configuration (GET/POST — DELETE blocked by authz)
+        - path:
+            type: PathPrefix
+            value: /api/v1/alerts
+        # Ingester (ring, tenants, tsdb, flush — no shutdown/prepare-*/unregister)
+        - path:
+            type: PathPrefix
+            value: /ingester/ring
+        - path:
+            type: PathPrefix
+            value: /ingester/tenants
+        - path:
+            type: PathPrefix
+            value: /ingester/tsdb
+        - path:
+            type: PathPrefix
+            value: /ingester/tsdb_metrics
+        - path:
+            type: PathPrefix
+            value: /ingester/flush
+        # Store-gateway (ring, tenants, tenant blocks — no prepare-shutdown)
+        - path:
+            type: PathPrefix
+            value: /store-gateway/ring
+        - path:
+            type: PathPrefix
+            value: /store-gateway/tenants
+        - path:
+            type: PathPrefix
+            value: /store-gateway/tenant
+        # Compactor (ring, tenants, planned_jobs, delete_tenant_status — no delete_tenant)
+        - path:
+            type: PathPrefix
+            value: /compactor/ring
+        - path:
+            type: PathPrefix
+            value: /compactor/tenants
+        - path:
+            type: PathPrefix
+            value: /compactor/tenant
+        - path:
+            type: PathPrefix
+            value: /compactor/delete_tenant_status
+        # Query-scheduler ring status
+        - path:
+            type: PathPrefix
+            value: /query-scheduler/ring
+        # Overrides-exporter ring status
+        - path:
+            type: PathPrefix
+            value: /overrides-exporter/ring
+        # Tenant limits (all services)
+        - path:
+            type: PathPrefix
+            value: /api/v1/user_limits
+        # Tenant ingestion stats (querier)
+        - path:
+            type: PathPrefix
+            value: /api/v1/user_stats
+        # Configuration (all services)
+        - path:
+            type: PathPrefix
+            value: /config
+        # Runtime configuration (all services)
+        - path:
+            type: PathPrefix
+            value: /runtime_config
+        # Services' status (all services)
+        - path:
+            type: PathPrefix
+            value: /services
+        # Metrics (all services)
+        - path:
+            type: PathPrefix
+            value: /metrics
+        # Memberlist cluster (all services)
+        - path:
+            type: PathPrefix
+            value: /memberlist
+        # Status endpoints (config, flags, buildinfo)
+        - path:
+            type: PathPrefix
+            value: /api/v1/status
+        # Debug (pprof, fgprof)
+        - path:
+            type: PathPrefix
+            value: /debug
+        # Readiness probe (no auth required — authz policy allows without scope)
+        - path:
+            type: PathPrefix
+            value: /ready
       backendRefs:
         - name: mimir-app
           port: 8080
