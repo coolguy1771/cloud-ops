@@ -27,6 +27,8 @@ spec:
           secretKeyRef:
             name: hcloud-ccm
             key: token
+      HCLOUD_NETWORK:
+        value: "12312920"
     monitoring:
       enabled: true
       podMonitor:
