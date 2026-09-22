@@ -1,0 +1,17 @@
+---
+# Allow the Istio Gateway in istio-ingress to reference the TLS secret directly
+# from the network namespace, where cert-manager manages it.
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: allow-istio-gateway-tls
+  namespace: network
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: istio-ingress
+  to:
+    - group: ""
+      kind: Secret
+      name: cloud-witl-xyz-tls

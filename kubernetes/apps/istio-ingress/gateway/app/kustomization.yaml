@@ -6,7 +6,6 @@ resources:
   - ./envoyfilter-hardening.yaml
   - ./envoyfilter-skip-jwt-authentik.yaml
   - ./envoyfilter-skip-jwt-grafana.yaml
-  - ./externalsecret.yaml
   - ./gateway-options.yaml
   - ./gateway-requestauthentication.yaml
   - ./gateway.yaml

@@ -29,3 +29,4 @@ spec:
         certificateRefs:
           - kind: Secret
             name: cloud-witl-xyz-tls
+            namespace: network
