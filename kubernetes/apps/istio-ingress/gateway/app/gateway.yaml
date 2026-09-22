@@ -12,6 +12,8 @@ spec:
   infrastructure:
     annotations:
       load-balancer.hetzner.cloud/network-zone: eu-central
+      load-balancer.hetzner.cloud/use-private-ip: "true"
+      load-balancer.hetzner.cloud/network: cloud-ops
     parametersRef:
       group: ""
       kind: ConfigMap
