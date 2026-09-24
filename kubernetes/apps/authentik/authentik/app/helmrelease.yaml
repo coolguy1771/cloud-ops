@@ -41,6 +41,13 @@ spec:
         secretName: authentik-secrets
       error_reporting:
         enabled: false
+      email:
+        host: "smtp.fastmail.com"
+        port: 587
+        use_tls: true
+        use_ssl: false
+        timeout: 30
+        from: "authentik@cloud.witl.xyz"
     global:
       topologySpreadConstraints:
         - maxSkew: 1
