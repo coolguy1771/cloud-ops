@@ -41,6 +41,7 @@ spec:
         secretName: authentik-secrets
       error_reporting:
         enabled: false
+    global:
       email:
         host: "smtp.fastmail.com"
         port: 587
@@ -48,7 +49,6 @@ spec:
         use_ssl: false
         timeout: 30
         from: "authentik@cloud.witl.xyz"
-    global:
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/region
