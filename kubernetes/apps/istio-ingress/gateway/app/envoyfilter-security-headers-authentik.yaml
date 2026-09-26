@@ -1,0 +1,46 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/networking.istio.io/envoyfilter_v1alpha3.json
+# authentik hardening doc (docs.goauthentik.io/security/security-hardening/) recommends
+# CSP/HSTS/Referrer-Policy/X-Content-Type-Options at the reverse proxy. Scoped to the
+# authentik vhost only. CSP uses ADD_IF_ABSENT so it never clobbers a CSP authentik
+# itself sets on a response (e.g. user-uploaded avatars/media).
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: gateway-security-headers-authentik
+  namespace: istio-ingress
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: istio
+  configPatches:
+    - applyTo: VIRTUAL_HOST
+      match:
+        context: GATEWAY
+        routeConfiguration:
+          vhost:
+            name: auth.cloud.witl.xyz:443
+      patch:
+        operation: MERGE
+        value:
+          response_headers_to_add:
+            - header:
+                key: content-security-policy
+                value: >-
+                  default-src 'self'; img-src https: data:; object-src 'none';
+                  frame-ancestors 'self'; style-src 'self' 'unsafe-inline';
+                  script-src 'self' 'unsafe-inline'
+              append_action: ADD_IF_ABSENT
+            - header:
+                key: strict-transport-security
+                value: "max-age=31536000; includeSubDomains"
+              append_action: OVERWRITE_IF_EXISTS_OR_ADD
+            - header:
+                key: referrer-policy
+                value: "strict-origin-when-cross-origin"
+              append_action: OVERWRITE_IF_EXISTS_OR_ADD
+            - header:
+                key: x-content-type-options
+                value: "nosniff"
+              append_action: OVERWRITE_IF_EXISTS_OR_ADD

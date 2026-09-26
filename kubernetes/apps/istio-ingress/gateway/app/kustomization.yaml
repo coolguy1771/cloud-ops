@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - ./authorizationpolicies.yaml
   - ./envoyfilter-hardening.yaml
+  - ./envoyfilter-security-headers-authentik.yaml
   - ./envoyfilter-skip-jwt-authentik.yaml
   - ./envoyfilter-skip-jwt-grafana.yaml
   - ./gateway-options.yaml

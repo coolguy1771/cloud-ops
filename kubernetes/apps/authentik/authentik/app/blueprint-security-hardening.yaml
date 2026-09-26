@@ -1,0 +1,77 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/v1/configmap.json
+# Mounted into authentik via `blueprints.configMaps` (helmrelease.yaml) and applied
+# automatically by the worker. Only keys ending `.yaml` are discovered - see
+# https://docs.goauthentik.io/customize/blueprints/.
+#
+# Every object mutated below is one that authentik's own shipped default blueprints
+# (blueprints/default/*.yaml in the authentik image) create WITHOUT setting these
+# specific fields in their `attrs` block, so this blueprint can never be "raced" by a
+# reapply of the shipped defaults - checked against tag version/2026.8.3 (pinned chart
+# version) source. The one exception is the password policy's length_min/check_have_i_been_pwned/
+# hibp_allowed_count/error_message, which the shipped flow-password-change.yaml blueprint
+# DOES set on the same object - if a future authentik upgrade ships changed bytes for that
+# file, its defaults (length_min: 8, no HIBP check) could reassert over this one. Re-check
+# after bumping the authentik chart version.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-security-hardening-blueprint
+data:
+  security-hardening.yaml: |
+    version: 1
+    metadata:
+      name: cloud-ops - Security hardening (MFA, password policy, enumeration, sessions)
+    entries:
+
+    # MFA: the shipped default-authentication-flow already runs this stage on every login,
+    # but not_configured_action defaults to "skip" - meaning a user with no MFA device just
+    # sails through. Force enrollment instead, restrict accepted methods, and require
+    # WebAuthn user verification rather than merely preferring it.
+    - model: authentik_stages_authenticator_validate.authenticatorvalidatestage
+      identifiers:
+        name: default-authentication-mfa-validation
+      attrs:
+        not_configured_action: configure
+        device_classes:
+          - static
+          - totp
+          - webauthn
+        webauthn_user_verification: required
+        last_auth_threshold: seconds=0
+        configuration_stages:
+          - !Find [authentik_stages_authenticator_totp.authenticatortotpstage, [name, default-authenticator-totp-setup]]
+          - !Find [authentik_stages_authenticator_webauthn.authenticatorwebauthnstage, [name, default-authenticator-webauthn-setup]]
+
+    # Account enumeration: pretend_user_exists already defaults to true, but
+    # show_matched_user defaults to true too - it reveals a matched account (name/avatar)
+    # after the identification step, which leaks whether an identifier is valid.
+    - model: authentik_stages_identification.identificationstage
+      identifiers:
+        name: default-authentication-identification
+      attrs:
+        show_matched_user: false
+        pretend_user_exists: true
+
+    # Sessions: force re-auth of other sessions on new login; don't persist a long-lived
+    # "remember this device" cookie. network_binding/geoip_binding are set here too - they
+    # are inert (no-op) until the GeoIP databases exist at /geoip/*.mmdb (see geoip.enabled
+    # in helmrelease.yaml), so this is safe to ship ahead of that.
+    - model: authentik_stages_user_login.userloginstage
+      identifiers:
+        name: default-authentication-login
+      attrs:
+        terminate_other_sessions: true
+        remember_device: seconds=0
+        network_binding: bind_asn
+        geoip_binding: bind_continent
+
+    # Password policy: shipped default is length_min=8 with no HaveIBeenPwned check.
+    - model: authentik_policies_password.passwordpolicy
+      identifiers:
+        name: default-password-change-password-policy
+      attrs:
+        length_min: 15
+        check_have_i_been_pwned: true
+        hibp_allowed_count: 0
+        error_message: "Password must be at least 15 characters and must not have appeared in a known data breach."
