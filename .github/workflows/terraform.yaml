@@ -12,6 +12,7 @@ on:
       - infrastructure/terraform/*.hcl
       - infrastructure/terraform/scripts/**
       - infrastructure/terraform/terraform.tfvars.example
+      - infrastructure/terraform/authentik/**
       - infrastructure/omni/workers/**
       - infrastructure/omni/patches/**
       - .github/workflows/terraform.yaml
@@ -23,6 +24,7 @@ on:
       - infrastructure/terraform/*.hcl
       - infrastructure/terraform/scripts/**
       - infrastructure/terraform/terraform.tfvars.example
+      - infrastructure/terraform/authentik/**
       - infrastructure/omni/workers/**
       - infrastructure/omni/patches/**
       - .github/workflows/terraform.yaml
@@ -61,6 +63,14 @@ jobs:
       - name: Validate Terraform
         run: terraform validate
         working-directory: infrastructure/terraform
+
+      - name: Initialize Terraform (authentik)
+        run: terraform init -backend=false -input=false
+        working-directory: infrastructure/terraform/authentik
+
+      - name: Validate Terraform (authentik)
+        run: terraform validate
+        working-directory: infrastructure/terraform/authentik
 
       - name: Initialize TFLint
         run: tflint --config="$GITHUB_WORKSPACE/.tflint.hcl" --init
