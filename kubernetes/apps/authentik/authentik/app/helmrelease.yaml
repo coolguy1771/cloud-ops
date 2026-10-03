@@ -65,6 +65,16 @@ spec:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/region
           whenUnsatisfiable: ScheduleAnyway
+      # hel1 is ~25ms from fsn1/nbg1 and the Postgres primary normally lives in fsn1/nbg1;
+      # authentik does dozens of queries per request, so keep it off hel1 when possible.
+      affinity:
+        podAntiAffinity: soft
+        nodeAffinity:
+          type: soft
+          matchExpressions:
+            - key: topology.kubernetes.io/region
+              operator: NotIn
+              values: ["hel1"]
       volumes:
         - name: postgres-ca
           secret:
@@ -85,33 +95,22 @@ spec:
           value: authentik
         - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
           value: "true"
+        # No read replicas: the ro pooler can land on the hel1 replica (~28ms/query vs
+        # ~6ms on rw), and authentik issues dozens of reads per request.
         - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-          value: "0"
+          value: "60"
+        # Reuse connections across requests (saves a TLS + pgbouncer handshake each time);
+        # safe with transaction pooling + server-side cursors disabled.
+        - name: AUTHENTIK_POSTGRESQL__CONN_HEALTH_CHECKS
+          value: "true"
+        # LISTEN/NOTIFY (channels, dramatiq) and advisory locks break through a
+        # transaction-mode pooler; route them straight to the primary.
+        - name: AUTHENTIK_POSTGRESQL__DIRECT__HOST
+          value: postgres-rw.database.svc.cluster.local
         - name: AUTHENTIK_POSTGRESQL__SSLMODE
           value: verify-full
         - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
           value: /etc/ssl/certs/postgres-ca.crt
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
-          value: postgres-pooler-ro.database.svc.cluster.local
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PORT
-          value: "5432"
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
-          value: authentik
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
-          value: authentik
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: authentik-secrets
-              key: AUTHENTIK_POSTGRESQL__PASSWORD
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__SSLMODE
-          value: verify-full
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__SSLROOTCERT
-          value: /etc/ssl/certs/postgres-ca.crt
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__DISABLE_SERVER_SIDE_CURSORS
-          value: "true"
-        - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_MAX_AGE
-          value: "0"
         # Trust mesh/proxy hops; gateway Lua sets X-Real-IP / X-Forwarded-For from CF-Connecting-IP.
         - name: AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS
           value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"

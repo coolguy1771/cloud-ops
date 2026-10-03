@@ -9,7 +9,36 @@ metadata:
     istio.io/waypoint-for: service
 spec:
   gatewayClassName: istio-waypoint
+  infrastructure:
+    parametersRef:
+      group: ""
+      kind: ConfigMap
+      name: waypoint-options
   listeners:
     - name: mesh
       port: 15008
       protocol: HBONE
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kubernetes-configmap
+# Strategic-merge-patched onto the auto-provisioned waypoint Deployment. Every request
+# to authentik hops through this waypoint, so keep it out of hel1 (~25ms from the
+# fsn1/nbg1 nodes where authentik and the Postgres primary normally run).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waypoint-options
+  namespace: authentik
+data:
+  deployment: |
+    spec:
+      template:
+        spec:
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: topology.kubernetes.io/region
+                        operator: NotIn
+                        values: ["hel1"]
