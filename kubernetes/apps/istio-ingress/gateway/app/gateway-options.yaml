@@ -11,6 +11,11 @@ data:
   deployment: |
     spec:
       template:
+        metadata:
+          annotations:
+            # Hetzner LB sends PROXY protocol (uses-proxyprotocol in gateway.yaml), so
+            # Envoy sees the real peer and the real-IP Lua can trust only Cloudflare.
+            proxy.istio.io/config: '{"gatewayTopology":{"proxyProtocol":{}}}'
         spec:
           affinity:
             podAntiAffinity:

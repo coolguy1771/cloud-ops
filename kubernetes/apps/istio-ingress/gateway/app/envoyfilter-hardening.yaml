@@ -1,7 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/networking.istio.io/envoyfilter_v1alpha3.json
 # Edge hardening + real-IP / forwarded headers for Cloudflare → Istio Gateway → apps.
-# Path: client → Cloudflare (CF-Connecting-IP + XFF) → Hetzner L4 LB → Envoy.
+# Path: client → Cloudflare (CF-Connecting-IP + XFF) → Hetzner L4 LB (PROXY protocol) → Envoy.
 # CF client-IP headers are trusted only when the immediate peer is a Cloudflare
 # published address (origin is publicly reachable via the Hetzner LB).
 apiVersion: networking.istio.io/v1alpha3
@@ -133,14 +133,23 @@ spec:
                 end
 
                 function envoy_on_request(handle)
-                  local from_cf = is_cloudflare(peer_ip(handle))
+                  local peer = peer_ip(handle)
+                  local from_cf = is_cloudflare(peer)
                   local headers = handle:headers()
 
                   if not from_cf then
-                    -- Strip forgeable CF / client-IP headers on direct-to-origin traffic.
+                    -- Direct-to-origin: every client-IP header is forgeable, including
+                    -- X-Forwarded-For (apps take its leftmost entry), so pin them to the
+                    -- real peer recovered via PROXY protocol.
                     headers:remove("cf-connecting-ip")
                     headers:remove("true-client-ip")
-                    headers:remove("x-real-ip")
+                    if peer ~= nil and peer ~= "" then
+                      headers:replace("x-forwarded-for", peer)
+                      headers:replace("x-real-ip", peer)
+                    else
+                      headers:remove("x-forwarded-for")
+                      headers:remove("x-real-ip")
+                    end
                     return
                   end
 
