@@ -14,6 +14,10 @@ spec:
       load-balancer.hetzner.cloud/network-zone: eu-central
       load-balancer.hetzner.cloud/use-private-ip: "true"
       load-balancer.hetzner.cloud/network: cloud-ops
+      # Preserve the real peer (Cloudflare edge or direct client) through the LB +
+      # Cilium SNAT; the gateway pods accept it via gatewayTopology.proxyProtocol in
+      # gateway-options. Both sides must be enabled together.
+      load-balancer.hetzner.cloud/uses-proxyprotocol: "true"
     parametersRef:
       group: ""
       kind: ConfigMap
