@@ -36,11 +36,8 @@ spec:
               metadata:
                 name: authentik-worker
   values:
-    blueprints:
-      configMaps:
-        - authentik-security-hardening-blueprint
-    # GeoIP session binding (network_binding/geoip_binding are already set in the security
-    # hardening blueprint - they're inert until these databases exist). Create a 1Password
+    # GeoIP session binding (network_binding/geoip_binding are already set on the login
+    # stage in infrastructure/terraform/authentik - inert until these databases exist). Create a 1Password
     # item "authentik-geoip" with fields account_id/license_key (from a MaxMind GeoLite2
     # account: https://www.maxmind.com/en/geolite2/signup), confirm the authentik-geoip
     # ExternalSecret has synced, then flip enabled to true.

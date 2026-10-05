@@ -9,4 +9,3 @@ resources:
   - ./secretstore.yaml
   - ./externalsecret.yaml
   - ./scaledobjects.yaml
-  - ./blueprint-security-hardening.yaml
