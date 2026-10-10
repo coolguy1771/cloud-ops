@@ -6,7 +6,6 @@ resources:
   - ./delilah-alertrules.yaml
   - ./delilah-folder.yaml
   - ./grafanadatasource.yaml
-  - ./grafanadatasource-admin-tenants.yaml
   - ./grafana.yaml
   - ./istio-dashboards.yaml
   - ./peerauthentication.yaml
