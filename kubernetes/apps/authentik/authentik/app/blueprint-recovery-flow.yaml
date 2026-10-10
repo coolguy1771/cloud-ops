@@ -9,21 +9,25 @@
 # flows on the default brand but leaves `flow_recovery` unset), so the admin UI
 # reports "This brand does not have a recovery flow" and the login screen shows no
 # "Forgot password" link. This blueprint creates a recovery flow modelled on the
-# upstream example (blueprints/example/flows-recovery-email-verification.yaml at
-# version/2026.8.3) and points the default brand at it.
+# upstream MFA-verification example (blueprints/example/flows-recovery-email-
+# mfa-verification.yaml at version/2026.8.3) and points the default brand at it.
 #
 # How it works: identification -> email stage sends a magic link -> on link click the
-# flow plan is restored and skips straight to set-password -> user-write -> user-login.
+# flow plan is restored (identification + email-send are skipped) -> MFA challenge ->
+# set-password -> user-write -> user-login. The MFA gate is required here because the
+# authentication flow forces MFA (see authentik-security-hardening-blueprint); without
+# it an attacker who takes over the mailbox could reset the password and bypass MFA.
+# Tradeoff: a user who loses both password and MFA device is locked out of self-service.
+#
 # The email stage uses `use_global_settings: true`, so outbound mail goes through the
 # Fastmail SMTP configured in helmrelease.yaml (AUTHENTIK_EMAIL__*, creds from the
-# `smtp-relay` 1Password item).
-#
-# The set-password stage reuses the hardened `default-password-change-password-policy`
-# (created by the shipped "Default - Password change flow" blueprint, mutated to
-# length_min=15 + HIBP by authentik-security-hardening-blueprint) so recovery can't
-# bypass the password policy enforced on normal password changes. The metaapplyblueprint
-# entry declares that dependency with `required: false` (the pattern default-brand.yaml
-# uses for its own `!Find` flow references), so apply order is safe.
+# `smtp-relay` 1Password item). The set-password stage reuses the hardened
+# `default-password-change-password-policy` (created by the shipped "Default - Password
+# change flow" blueprint, mutated to length_min=15 + HIBP by authentik-security-hardening-
+# blueprint) so recovery can't bypass the password policy enforced on normal password
+# changes. The metaapplyblueprint entry declares that dependency with `required: false`
+# (the pattern default-brand.yaml uses for its own `!Find` flow references), so apply
+# order is safe.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -88,6 +92,19 @@ data:
       attrs:
         expression: |
           return bool(request.context.get('is_restored', True))
+
+    # MFA gate: after the email magic link is verified, challenge for an MFA factor before
+    # allowing a password change. This mirrors the upstream MFA-verification recovery example
+    # (blueprints/example/flows-recovery-email-mfa-verification.yaml @ version/2026.8.3) and is
+    # required here because the authentication flow forces MFA (see
+    # authentik-security-hardening-blueprint) - without this stage an attacker who takes over
+    # the mailbox could reset the password and log in, bypassing MFA. Bare defaults accept all
+    # device classes and skip when the user has no MFA device (enrollment is handled on login,
+    # not during recovery).
+    - identifiers:
+        name: default-recovery-mfa
+      id: default-recovery-mfa
+      model: authentik_stages_authenticator_validate.authenticatorvalidatestage
 
     - identifiers:
         name: default-recovery-email
@@ -154,6 +171,18 @@ data:
         order: 20
       model: authentik_flows.flowstagebinding
       id: flow-binding-email
+      attrs:
+        evaluate_on_plan: true
+        re_evaluate_policies: true
+        policy_engine_mode: any
+        invalid_response_action: retry
+
+    - identifiers:
+        target: !KeyOf flow
+        stage: !KeyOf default-recovery-mfa
+        order: 21
+      model: authentik_flows.flowstagebinding
+      id: flow-binding-mfa
       attrs:
         evaluate_on_plan: true
         re_evaluate_policies: true
