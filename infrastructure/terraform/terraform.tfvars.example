@@ -17,8 +17,10 @@ talos_image_id = "123456789"
 
 cluster_name = "cloud-ops"
 
-# Spread control planes across two locations for HA:
-control_plane_locations = ["fsn1", "nbg1", "fsn1"]
+# Single region (fsn1) — all nodes consolidated to one Hetzner location.
+# DB replication across regions (fsn1<->nbg1/hel1) caused poor performance;
+# the tradeoff is no cross-region HA.
+control_plane_locations = ["fsn1", "fsn1", "fsn1"]
 # Uniform type, or use control_plane_server_types for rolling resize:
 control_plane_server_type = "cx33"
 # control_plane_server_types = ["cx33", "cx33", "cx33"]
@@ -31,15 +33,19 @@ control_plane_machine_ids = [
   "00000000-0000-0000-0000-000000000003",
 ]
 
-# fsn1 worker count is applied by Terraform (omni_machine_set.workers).
-# MachineClasses + non-fsn1 sets: infrastructure/omni/workers/ (omnictl apply).
-# Edit server_type / providerid in that YAML; keep locations counts in sync.
+# fsn1 worker count is applied by Terraform (omni_machine_set.workers), backed
+# by omni_machine_class.hetzner_workers_fsn1 (Terraform-managed as of provider
+# v0.1.0-beta.0). Single-region consolidation removed the nbg1/hel1 sets.
 worker_locations = {
-  fsn1 = 2
-  nbg1 = 3
-  hel1 = 2
+  fsn1 = 7
 }
 worker_allocation_type = "Static" # or "Unlimited"
+worker_server_type = "cx43" # Hetzner flavor for auto-provisioned workers
+
+# Hetzner infra provider (omni_infra_provider.hetzner). Import the existing
+# object before the first apply: terraform import omni_infra_provider.hetzner hetzner
+hetzner_infra_provider_name = "hetzner"
+hetzner_infra_provider_ttl  = "8760h" # 365d; renew by changing this or renew_trigger
 
 # --- Omni ---
 omni_endpoint = "https://your-instance.omni.siderolabs.io"

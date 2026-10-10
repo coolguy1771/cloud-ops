@@ -59,11 +59,13 @@ variable "control_plane_server_types" {
   }
 }
 
-# Spread across two locations for HA; third node re-uses the primary location.
+# Single region (fsn1): cross-region etcd latency hurt DB replication
+# performance, so all nodes consolidate to one Hetzner location. This
+# sacrifices cross-region HA — a single-region outage takes the cluster down.
 variable "control_plane_locations" {
   description = "Hetzner locations for the three control plane nodes"
   type        = list(string)
-  default     = ["fsn1", "nbg1", "fsn1"]
+  default     = ["fsn1", "fsn1", "fsn1"]
 
   validation {
     condition     = length(var.control_plane_locations) == 3
@@ -106,6 +108,33 @@ variable "worker_allocation_type" {
     condition     = contains(["Static", "Unlimited"], var.worker_allocation_type)
     error_message = "worker_allocation_type must be \"Static\" or \"Unlimited\"."
   }
+}
+
+# Hetzner server flavor for auto-provisioned workers. Lives in the MachineClass
+# provider_data (omni_machine_class.hetzner_workers_fsn1), so it is a variable
+# rather than checked-in YAML — change it via the HCP workspace, not a code edit.
+variable "worker_server_type" {
+  description = "Hetzner server type for auto-provisioned worker nodes (e.g. cpx32)"
+  type        = string
+  default     = "cx43"
+}
+
+# --- Infra provider ---
+# The Hetzner infra provider is registered in Omni by omni_infra_provider.hetzner
+# (provider v0.1.0-beta.0+). It replaces the one-time manual `omnictl infraprovider
+# create hetzner` step. The generated key (resource .key) is what the
+# coolguy1771/hetzner-infra-provider daemon authenticates with — see
+# hetzner_infra_provider.tf for the import / key-recovery caveat.
+variable "hetzner_infra_provider_name" {
+  description = "Omni infrastructure provider name used by the Hetzner worker MachineClass auto_provision block. DNS-1123 label, immutable once created."
+  type        = string
+  default     = "hetzner"
+}
+
+variable "hetzner_infra_provider_ttl" {
+  description = "Lifetime of the Hetzner infra provider service-account key, as a Go duration (Omni caps at 8760h). Changing it renews the key (new key in state) without replacing the provider."
+  type        = string
+  default     = "8760h"
 }
 
 # --- Omni ---

@@ -35,13 +35,16 @@ output "omni_control_plane_machine_set" {
 
 output "omni_worker_machine_sets" {
   description = "Omni worker machine set IDs by Hetzner location (dynamic, allocated from per-location MachineClasses)"
-  value = merge(
-    { for location, ms in omni_machine_set.workers : location => ms.name },
-    local.hetzner_worker_machine_set_names
-  )
+  value       = { for location, ms in omni_machine_set.workers : location => ms.name }
 }
 
-output "hetzner_worker_machine_classes" {
-  description = "MachineClass names used for dynamic Hetzner worker auto-provisioning, by location"
-  value       = local.hetzner_worker_machine_class_names
+output "hetzner_worker_machine_class" {
+  description = "MachineClass name used for dynamic Hetzner worker auto-provisioning (single region, fsn1)"
+  value       = omni_machine_class.hetzner_workers_fsn1.name
+}
+
+output "hetzner_infra_provider_key" {
+  description = "Service-account key for the Hetzner infra-provider daemon (OMNI_SERVICE_ACCOUNT_KEY). Null after import — Omni does not return the private half; the daemon keeps its existing key. A fresh value appears only on create/renew."
+  value       = omni_infra_provider.hetzner.key
+  sensitive   = true
 }

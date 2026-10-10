@@ -166,6 +166,30 @@ machine_id_from_install_patch() {
   sed -E 's/^000-cm-(.+)-install-disk$/\1/'
 }
 
+# Derive the omni_config_patch.install_disk for_each key from an Omni config
+# patch id. The resource's for_each keys are the Terraform-side machine-set
+# labels: "control_plane" for the CP set, "workers_<location>" for each worker
+# set (e.g. "workers_fsn1"). Omni's install-disk patch ids follow the pattern
+# 000-cm-<omni-machine-set-name>-install-disk, and the Omni machine-set name
+# for workers is "<cluster>-workers" (the native resource), so map that to the
+# Terraform key.
+install_disk_patch_key() {
+  local cluster="$1"
+  local patch_id
+  patch_id="$(cat)"
+  local set_name
+  set_name="$(echo "$patch_id" | sed -E 's/^000-cm-(.+)-install-disk$/\1/')"
+  if [[ -z "$set_name" || "$set_name" == "$patch_id" ]]; then
+    echo ""
+    return
+  fi
+  case "$set_name" in
+    "${cluster}-controlplane") echo "control_plane" ;;
+    "${cluster}-workers")      echo "workers_fsn1" ;;
+    *)                          echo "$set_name" ;;
+  esac
+}
+
 import_if_missing() {
   local addr="$1"
   local id="$2"
@@ -233,6 +257,14 @@ import_if_missing omni_cluster.this "$CLUSTER"
 import_if_missing omni_machine_set.control_plane "$CP_SET"
 import_if_missing omni_machine_set.workers "$WORKER_SET"
 
+echo "==> Infra provider and worker MachineClass"
+# omni_infra_provider.hetzner and omni_machine_class.hetzner_workers_fsn1 were
+# previously created manually (omnictl infraprovider create / MachineClass YAML).
+# Import them so the first apply with the v0.1.0-beta.0 resources adopts them
+# instead of trying to recreate. The imported infra provider has key = null.
+import_if_missing omni_infra_provider.hetzner "hetzner"
+import_if_missing omni_machine_class.hetzner_workers_fsn1 "${CLUSTER}-hetzner-workers-fsn1"
+
 echo "==> Control plane nodes"
 for id in "${CP_MACHINES[@]}"; do
   import_if_missing "omni_machine_set_node.control_plane[\"$id\"]" "$id"
@@ -247,13 +279,17 @@ echo "==> Config patches"
 import_if_missing omni_config_patch.all_nodes "$ALL_NODES_PATCH"
 import_if_missing omni_config_patch.control_plane "$CONTROL_PLANE_PATCH"
 
+# Install-disk patches are selected by machine_set, so the for_each keys in
+# omni_config_patch.install_disk are the machine-set names (control_plane,
+# workers_fsn1), not per-machine IDs. Import each patch under the key that
+# matches the resource's for_each map.
 for patch_id in "${INSTALL_DISK_PATCHES[@]}"; do
-  machine_id="$(echo "$patch_id" | machine_id_from_install_patch)"
-  if [[ -z "$machine_id" || "$machine_id" == "$patch_id" ]]; then
-    echo "error: cannot parse machine id from patch id: ${patch_id}" >&2
+  patch_key="$(echo "$patch_id" | install_disk_patch_key "$CLUSTER")"
+  if [[ -z "$patch_key" || "$patch_key" == "$patch_id" ]]; then
+    echo "error: cannot derive install-disk for_each key from patch id: ${patch_id}" >&2
     exit 1
   fi
-  import_if_missing "omni_config_patch.install_disk[\"${machine_id}\"]" "$patch_id"
+  import_if_missing "omni_config_patch.install_disk[\"${patch_key}\"]" "$patch_id"
 done
 
 echo

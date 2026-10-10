@@ -8,7 +8,7 @@
 | `patches/all-nodes.yaml` | Cluster-wide Talos patches (CNI none, kube-proxy off, KubePrism) |
 | `patches/controlplane.yaml` | Control plane Talos API access for CCM and runners |
 | `patches/install-disk.yaml` | Install disk (`/dev/sda`) for all nodes |
-| `workers/` | MachineClasses + non-fsn1 machine sets (`omnictl apply` only) |
+| `workers/` | Notes on the Terraform-managed fsn1 worker MachineClass + infra provider |
 | `../terraform/omni.tf` | Cluster, CP machine set, node assignments |
 | `../terraform/omni_patches.tf` | Applies patch files via `omni_config_patch` resources |
 | `../terraform/scripts/import-omni.sh` | One-shot import of existing Omni state (local CLI) |
@@ -17,8 +17,8 @@
 
 Terraform is the source of truth for resources it owns. Avoid editing those in
 the Omni UI or via cluster templates — changes will be overwritten on the next
-apply. Worker MachineClasses / non-fsn1 sets are owned by the YAML in `workers/`
-instead.
+apply. As of provider v0.1.0-beta.0, the worker MachineClass and the Hetzner infra
+provider are also Terraform-owned (`omni_machine_class`, `omni_infra_provider`).
 
 ## HCP VCS workflow
 
@@ -28,10 +28,11 @@ instead.
 - Workspace variables hold tokens and tfvars (not git).
 - GitHub Actions only runs fmt / validate / TFLint / Trivy.
 
-## Workers (`omnictl`)
+## Workers
 
-See [workers/README.md](workers/README.md). Apply MachineClass YAML before the
-first HCP run that manages `omni_machine_set.workers` for fsn1.
+See [workers/README.md](workers/README.md). The MachineClass and infra provider
+are Terraform resources (provider v0.1.0-beta.0+); import the existing Omni
+objects before the first apply that would otherwise recreate them.
 
 ## Authenticate (local import / CLI)
 
