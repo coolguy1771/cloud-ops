@@ -34,6 +34,18 @@ resource "hcloud_server" "control_plane" {
   delete_protection  = true
   rebuild_protection = true
 
+  # cp-2 is currently in nbg1 (its Hetzner server predates the fsn1
+  # consolidation). location is immutable on hcloud_server, so moving it
+  # requires destroy + recreate, which delete_protection blocks. Ignore
+  # location drift for now and migrate cp-2 to fsn1 manually later:
+  #   1. Remove delete_protection (temporarily) and delete cp-2 in Hetzner.
+  #   2. Remove cp-2 from Omni (omnictl delete clustermachine <id>).
+  #   3. Remove this ignore_changes and apply — Terraform recreates cp-2
+  #      in fsn1 and the Omni machine_set_node assigns it.
+  lifecycle {
+    ignore_changes = [location]
+  }
+
   depends_on = [hcloud_network_subnet.this]
 }
 
