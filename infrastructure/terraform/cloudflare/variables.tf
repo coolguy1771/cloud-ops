@@ -3,7 +3,7 @@ variable "cloudflare_api_token" {
     Cloudflare API token (optional if CLOUDFLARE_API_TOKEN is set). Required permissions:
       - Zone → Zone → Read (zone cloud.witl.xyz)
       - Zone → WAF → Edit
-      - Account → Account Firewall Access Rules → Edit
+      - Account → Account Filter Lists → Edit
     The external-dns dns-token is NOT sufficient (DNS-only). Prefer a dedicated
     1Password field e.g. cloudflare.waf-token.
   EOT
@@ -19,7 +19,7 @@ variable "cloudflare_zone_id" {
 }
 
 variable "cloudflare_account_id" {
-  description = "Cloudflare account ID (1Password cloudflare.account_tag). Used for account-scoped IP Access rules so all zones inherit the Hetzner ASN allow."
+  description = "Cloudflare account ID (1Password cloudflare.account_tag). Owns the IP lists referenced by the WAF rules."
   type        = string
 }
 
@@ -30,7 +30,7 @@ variable "authentik_host" {
 }
 
 variable "hetzner_asn" {
-  description = "Hetzner Online ASN — cluster node egress. Required to bypass Bot Fight Mode (WAF Skip cannot)."
+  description = "Hetzner Online ASN — cloud-ops node egress (workers are rolled by Omni, so IPs are not stable). Matched only for machine-client hosts in waf.tf."
   type        = string
   default     = "24940"
 }
@@ -38,11 +38,11 @@ variable "hetzner_asn" {
 variable "zone_custom_firewall_ruleset_id" {
   description = <<-EOT
     Existing zone entry-point ruleset ID for phase http_request_firewall_custom.
-    Cloudflare allows only one; discover via:
-      ./scripts/import-zone-custom-ruleset.sh
-    or GET /zones/$ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint
+    Cloudflare allows only one; discover via
+    GET /zones/$ZONE_ID/rulesets/phases/http_request_firewall_custom/entrypoint
   EOT
   type        = string
+  default     = "2ce7690471dd43f5ad81ecf785f7c164"
 }
 
 variable "zone_custom_firewall_name" {
@@ -51,12 +51,3 @@ variable "zone_custom_firewall_name" {
   default     = "default"
 }
 
-variable "zone_custom_firewall_extra_rules" {
-  description = <<-EOT
-    Extra custom security rules already on the zone entry-point ruleset.
-    Import script writes these to existing_custom_rules.auto.tfvars.json so
-    Terraform does not drop dashboard-created rules on apply.
-  EOT
-  type        = list(any)
-  default     = []
-}
