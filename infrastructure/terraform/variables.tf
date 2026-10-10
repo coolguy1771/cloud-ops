@@ -83,11 +83,10 @@ variable "control_plane_machine_ids" {
 }
 
 # --- Workers ---
-# MachineClass server_type / provider id live in infrastructure/omni/workers/
-# YAML (omnictl). Terraform only sizes the native fsn1 omni_machine_set.workers
-# from worker_locations + worker_allocation_type — keep counts in sync with YAML.
+# Terraform sizes the native omni_machine_set.workers from worker_locations.
+# Single region (fsn1); the MachineClass is omni_machine_class.hetzner_workers_fsn1.
 variable "worker_locations" {
-  description = "Map of Hetzner location -> worker count. fsn1 sizes omni_machine_set.workers; other locations are omnictl-managed machine sets (see infrastructure/omni/workers/)."
+  description = "Map of Hetzner location -> worker count. Only fsn1 is supported (single-region cluster). Sizes omni_machine_set.workers."
   type        = map(number)
   default = {
     fsn1 = 7
