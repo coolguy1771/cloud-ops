@@ -1,0 +1,224 @@
+---
+# yaml-language-server: $schema=https://json.schemas.pages.dev/v1/configmap.json
+# Mounted into authentik via `blueprints.configMaps` (helmrelease.yaml) and applied
+# automatically by the worker. Only keys ending `.yaml` are discovered - see
+# https://docs.goauthentik.io/customize/blueprints/.
+#
+# Self-service password recovery. authentik ships no default recovery flow (the
+# `blueprints/default/` set creates authentication/invalidation/user-settings/request
+# flows on the default brand but leaves `flow_recovery` unset), so the admin UI
+# reports "This brand does not have a recovery flow" and the login screen shows no
+# "Forgot password" link. This blueprint creates a recovery flow modelled on the
+# upstream example (blueprints/example/flows-recovery-email-verification.yaml at
+# version/2026.8.3) and points the default brand at it.
+#
+# How it works: identification -> email stage sends a magic link -> on link click the
+# flow plan is restored and skips straight to set-password -> user-write -> user-login.
+# The email stage uses `use_global_settings: true`, so outbound mail goes through the
+# Fastmail SMTP configured in helmrelease.yaml (AUTHENTIK_EMAIL__*, creds from the
+# `smtp-relay` 1Password item).
+#
+# The set-password stage reuses the hardened `default-password-change-password-policy`
+# (created by the shipped "Default - Password change flow" blueprint, mutated to
+# length_min=15 + HIBP by authentik-security-hardening-blueprint) so recovery can't
+# bypass the password policy enforced on normal password changes. The metaapplyblueprint
+# entry declares that dependency with `required: false` (the pattern default-brand.yaml
+# uses for its own `!Find` flow references), so apply order is safe.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-recovery-blueprint
+data:
+  recovery-flow.yaml: |
+    version: 1
+    metadata:
+      name: cloud-ops - Recovery flow (password reset via email)
+    entries:
+
+    # Ensure the shipped password-change blueprint (which creates the
+    # default-password-change-password-policy we reuse below) has applied first.
+    - model: authentik_blueprints.metaapplyblueprint
+      attrs:
+        identifiers:
+          name: Default - Password change flow
+        required: false
+
+    - identifiers:
+        slug: default-recovery-flow
+      id: flow
+      model: authentik_flows.flow
+      attrs:
+        name: Default recovery flow
+        title: Reset your password
+        designation: recovery
+        authentication: require_unauthenticated
+
+    - identifiers:
+        name: default-recovery-field-password
+      id: prompt-field-password
+      model: authentik_stages_prompt.prompt
+      attrs:
+        field_key: password
+        label: Password
+        type: password
+        required: true
+        placeholder: Password
+        order: 0
+        placeholder_expression: false
+
+    - identifiers:
+        name: default-recovery-field-password-repeat
+      id: prompt-field-password-repeat
+      model: authentik_stages_prompt.prompt
+      attrs:
+        field_key: password_repeat
+        label: Password (repeat)
+        type: password
+        required: true
+        placeholder: Password (repeat)
+        order: 1
+        placeholder_expression: false
+
+    # Skip identification + email on the restored pass (magic-link click) so the user
+    # lands directly on the set-password stage.
+    - identifiers:
+        name: default-recovery-skip-if-restored
+      id: default-recovery-skip-if-restored
+      model: authentik_policies_expression.expressionpolicy
+      attrs:
+        expression: |
+          return bool(request.context.get('is_restored', True))
+
+    - identifiers:
+        name: default-recovery-email
+      id: default-recovery-email
+      model: authentik_stages_email.emailstage
+      attrs:
+        use_global_settings: true
+        token_expiry: minutes=30
+        subject: Reset your cloud.witl.xyz password
+        template: email/password_reset.html
+        activate_user_on_success: true
+        recovery_max_attempts: 5
+        recovery_cache_timeout: minutes=5
+
+    - identifiers:
+        name: default-recovery-user-write
+      id: default-recovery-user-write
+      model: authentik_stages_user_write.userwritestage
+      attrs:
+        user_creation_mode: never_create
+
+    - identifiers:
+        name: default-recovery-identification
+      id: default-recovery-identification
+      model: authentik_stages_identification.identificationstage
+      attrs:
+        user_fields:
+          - email
+          - username
+
+    - identifiers:
+        name: default-recovery-user-login
+      id: default-recovery-user-login
+      model: authentik_stages_user_login.userloginstage
+
+    - identifiers:
+        name: Change your password
+      id: stages-prompt-password
+      model: authentik_stages_prompt.promptstage
+      attrs:
+        fields:
+          - !KeyOf prompt-field-password
+          - !KeyOf prompt-field-password-repeat
+        # Reuse the hardened policy (length_min=15 + HIBP) enforced on normal password
+        # changes; see authentik-security-hardening-blueprint.
+        validation_policies:
+          - !Find [authentik_policies_password.passwordpolicy, [name, default-password-change-password-policy]]
+
+    - identifiers:
+        target: !KeyOf flow
+        stage: !KeyOf default-recovery-identification
+        order: 10
+      model: authentik_flows.flowstagebinding
+      id: flow-binding-identification
+      attrs:
+        evaluate_on_plan: true
+        re_evaluate_policies: true
+        policy_engine_mode: any
+        invalid_response_action: retry
+
+    - identifiers:
+        target: !KeyOf flow
+        stage: !KeyOf default-recovery-email
+        order: 20
+      model: authentik_flows.flowstagebinding
+      id: flow-binding-email
+      attrs:
+        evaluate_on_plan: true
+        re_evaluate_policies: true
+        policy_engine_mode: any
+        invalid_response_action: retry
+
+    - identifiers:
+        target: !KeyOf flow
+        stage: !KeyOf stages-prompt-password
+        order: 30
+      model: authentik_flows.flowstagebinding
+      attrs:
+        evaluate_on_plan: true
+        re_evaluate_policies: false
+        policy_engine_mode: any
+        invalid_response_action: retry
+
+    - identifiers:
+        target: !KeyOf flow
+        stage: !KeyOf default-recovery-user-write
+        order: 40
+      model: authentik_flows.flowstagebinding
+      attrs:
+        evaluate_on_plan: true
+        re_evaluate_policies: false
+        policy_engine_mode: any
+        invalid_response_action: retry
+
+    - identifiers:
+        target: !KeyOf flow
+        stage: !KeyOf default-recovery-user-login
+        order: 100
+      model: authentik_flows.flowstagebinding
+      attrs:
+        evaluate_on_plan: true
+        re_evaluate_policies: false
+        policy_engine_mode: any
+        invalid_response_action: retry
+
+    - identifiers:
+        policy: !KeyOf default-recovery-skip-if-restored
+        target: !KeyOf flow-binding-identification
+        order: 0
+      model: authentik_policies.policybinding
+      attrs:
+        negate: false
+        enabled: true
+        timeout: 30
+    - identifiers:
+        policy: !KeyOf default-recovery-skip-if-restored
+        target: !KeyOf flow-binding-email
+        order: 0
+      state: absent
+      model: authentik_policies.policybinding
+      attrs:
+        negate: false
+        enabled: true
+        timeout: 30
+
+    # Attach the recovery flow to the default brand (the only brand on this instance,
+    # domain=authentik-default, default=true). attrs only set flow_recovery; the shipped
+    # default-brand blueprint sets the other flow fields with `state: created`, so this
+    # never races it.
+    - model: authentik_brands.brand
+      identifiers:
+        domain: authentik-default
+      attrs:
+        flow_recovery: !Find [authentik_flows.flow, [slug, default-recovery-flow]]

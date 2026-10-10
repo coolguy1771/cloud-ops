@@ -10,3 +10,4 @@ resources:
   - ./externalsecret.yaml
   - ./scaledobjects.yaml
   - ./blueprint-security-hardening.yaml
+  - ./blueprint-recovery-flow.yaml
