@@ -1,7 +1,10 @@
 ---
 # Fixed-tenant datasources for Grafana Admins (in-cluster, static X-Scope-OrgID).
-# Default prometheus/loki/tempo use oauthPassThru and the user's JWT tenant_id.
-# Admins pick e.g. "Prometheus (icbplays-net)" in Explore to query another tenant.
+# Default prometheus/loki/tempo use oauthPassThru and the user's JWT tenant_id;
+# the default alertmanager is pinned to witl-xyz (see grafanadatasource.yaml) because
+# the Alertmanager config API is single-tenant per request. Admins pick e.g.
+# "Prometheus (icbplays-net)" in Explore to query another tenant, and "Alertmanager
+# (icbplays-net)" in Alerting to manage the other tenant's AM config.
 # OSS Grafana cannot hide datasources from Viewers; only grant Admin to superusers.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
@@ -113,6 +116,34 @@ spec:
     editable: false
     url: http://loki-read.observability.svc.cluster.local:3100
     jsonData:
+      httpHeaderName1: X-Scope-OrgID
+      timeout: 300
+    secureJsonData:
+      httpHeaderValue1: icbplays-net
+---
+# Mimir Alertmanager (icbplays-net). The default `alertmanager` datasource
+# (uid alertmanager) is pinned to witl-xyz because the Alertmanager config API
+# is single-tenant per request and cannot use oauthPassThru like the query
+# endpoints. This second datasource gives admins the same multi-tenant
+# selectability for the icbplays-net tenant.
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: alertmanager-icbplays-net
+spec:
+  instanceSelector:
+    matchLabels:
+      grafana.internal/instance: grafana
+  datasource:
+    type: alertmanager
+    name: Alertmanager (icbplays-net)
+    uid: alertmanager-icbplays-net
+    access: proxy
+    editable: false
+    url: http://mimir-app.mimir-system.svc.cluster.local:8080
+    jsonData:
+      implementation: mimir
       httpHeaderName1: X-Scope-OrgID
       timeout: 300
     secureJsonData:
