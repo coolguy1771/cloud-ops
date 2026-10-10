@@ -51,8 +51,12 @@ spec:
                       - istiod
               topologyKey: topology.kubernetes.io/zone
     meshConfig:
+      # MERGE_SLASHES, not DECODE_AND_MERGE_SLASHES: decoding %2F rewrites
+      # Mimir ruler namespaces (alloy%2F<ns>%2F<name>%2F<uid>) into extra path
+      # segments and the ruler API 404s. Gateway path AuthorizationPolicies are
+      # ALLOW lists, so an encoded slash fails closed instead of bypassing them.
       pathNormalization:
-        normalization: DECODE_AND_MERGE_SLASHES
+        normalization: MERGE_SLASHES
       extensionProviders:
         # Route mesh traces through Alloy so service-graph metrics can be derived,
         # then forwarded to Tempo (see k8s-monitoring destinations.tempo).
