@@ -46,10 +46,17 @@ data:
     # Account enumeration: pretend_user_exists already defaults to true, but
     # show_matched_user defaults to true too - it reveals a matched account (name/avatar)
     # after the identification step, which leaks whether an identifier is valid.
+    # user_fields must be set explicitly: the blueprint importer's serializer validates
+    # the full object, so omitting it makes user_fields default to empty, which trips the
+    # model-level validator ("When no user fields are selected, at least one source must
+    # be selected"). Match the shipped default (flow-default-authentication-flow.yaml).
     - model: authentik_stages_identification.identificationstage
       identifiers:
         name: default-authentication-identification
       attrs:
+        user_fields:
+          - email
+          - username
         show_matched_user: false
         pretend_user_exists: true
 
