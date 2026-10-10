@@ -25,6 +25,16 @@ spec:
       oauthPassThru: true
       timeout: 300
 ---
+# Mimir Alertmanager (witl-xyz tenant). Unlike the prometheus/loki/tempo
+# datasources, this one CANNOT use oauthPassThru + the external URL: those
+# datasources hit query endpoints that support tenant federation, so the
+# user's JWT tenant_id claim may carry multiple pipe-delimited tenants
+# (e.g. witl-xyz|icbplays-net). The Alertmanager API is a single-tenant
+# *config* API and rejects a multi-tenant X-Scope-OrgID with 401
+# "multiple org IDs present" (and 401 "no org id" when the OAuth token
+# can't be refreshed). Target one fixed tenant via the in-cluster URL with
+# a static X-Scope-OrgID header, the same pattern as the admin-tenant
+# datasources in grafanadatasource-admin-tenants.yaml.
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
 kind: GrafanaDatasource
@@ -40,11 +50,13 @@ spec:
     uid: alertmanager
     access: proxy
     editable: false
+    url: http://mimir-app.mimir-system.svc.cluster.local:8080
     jsonData:
       implementation: mimir
-      oauthPassThru: true
+      httpHeaderName1: X-Scope-OrgID
       timeout: 300
-    url: https://mimir.cloud.witl.xyz
+    secureJsonData:
+      httpHeaderValue1: witl-xyz
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/grafana.integreatly.org/grafanadatasource_v1beta1.json
 apiVersion: grafana.integreatly.org/v1beta1
