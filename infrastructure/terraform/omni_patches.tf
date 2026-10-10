@@ -17,29 +17,8 @@ resource "omni_config_patch" "control_plane" {
   cluster = omni_cluster.this.name
 
   selector = {
-    machine_set = omni_machine_set.control_plane.name
+    machine_set = omni_machine_set.control_plane.id
   }
 
   data = file("${local.omni_patch_dir}/controlplane.yaml")
-}
-
-# Install disk — one patch per machine set. Using a machine_set selector
-# (rather than per-cluster_machine) means dynamically auto-provisioned
-# workers get this patch automatically too, without Terraform needing to know
-# their machine IDs in advance.
-resource "omni_config_patch" "install_disk" {
-  for_each = merge(
-    { control_plane = omni_machine_set.control_plane.name },
-    { for location, ms in omni_machine_set.workers : "workers_${location}" => ms.name }
-  )
-
-  name    = "install-disk"
-  weight  = 0
-  cluster = omni_cluster.this.name
-
-  selector = {
-    machine_set = each.value
-  }
-
-  data = file("${local.omni_patch_dir}/install-disk.yaml")
 }

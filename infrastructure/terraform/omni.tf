@@ -23,5 +23,17 @@ resource "omni_machine_set_node" "control_plane" {
 
   cluster     = omni_cluster.this.name
   machine_id  = each.value
-  machine_set = omni_machine_set.control_plane.name
+  machine_set = omni_machine_set.control_plane.id
+}
+
+# Install disk — Omni now owns machine.install.disk and rejects config patches
+# overriding it (provider v0.1.0-beta.0). Set it per-machine instead. Control
+# plane machine IDs are known (var.control_plane_machine_ids); auto-provisioned
+# workers get Omni's default disk selection (single-disk Hetzner servers →
+# /dev/sda is the natural default).
+resource "omni_machine_install_disk" "control_plane" {
+  for_each = toset(local.omni_control_plane_machine_ids)
+
+  machine_id = each.value
+  disk       = "/dev/sda"
 }

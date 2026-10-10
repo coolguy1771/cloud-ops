@@ -7,7 +7,7 @@
 |------|---------|
 | `patches/all-nodes.yaml` | Cluster-wide Talos patches (CNI none, kube-proxy off, KubePrism) |
 | `patches/controlplane.yaml` | Control plane Talos API access for CCM and runners |
-| `patches/install-disk.yaml` | Install disk (`/dev/sda`) for all nodes |
+| `patches/install-disk.yaml` | Removed — Omni owns `machine.install.disk`; install disk is now set via `omni_machine_install_disk` (control planes) or Omni default (workers) |
 | `workers/` | Notes on the Terraform-managed fsn1 worker MachineClass + infra provider |
 | `../terraform/omni.tf` | Cluster, CP machine set, node assignments |
 | `../terraform/omni_patches.tf` | Applies patch files via `omni_config_patch` resources |

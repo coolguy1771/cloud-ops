@@ -44,8 +44,7 @@ key-recovery caveat in `hetzner_infra_provider.tf`).
 ## Decommissioning the old multi-region sets (one-time, already done)
 
 When consolidating, the `nbg1` / `hel1` MachineClasses and MachineSets must be
-deleted from Omni so Terraform stops tracking install-disk patches for them
-(`omni_config_patch.install_disk` keys are derived from `worker_locations`):
+deleted from Omni so Terraform stops tracking them:
 
 ```bash
 omnictl delete machinesets cloud-ops-workers-nbg1 cloud-ops-workers-hel1
