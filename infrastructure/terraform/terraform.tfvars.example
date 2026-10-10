@@ -51,4 +51,4 @@ hetzner_infra_provider_ttl  = "8760h" # 365d; renew by changing this or renew_tr
 omni_endpoint = "https://your-instance.omni.siderolabs.io"
 
 kubernetes_version = "1.36.1"
-talos_version      = "1.13.7"
+talos_version      = "1.14.2"

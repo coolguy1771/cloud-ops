@@ -41,12 +41,11 @@ Then feed the `hetzner_infra_provider_key` output to the
 `coolguy1771/hetzner-infra-provider` daemon (or keep its existing key — see the
 key-recovery caveat in `hetzner_infra_provider.tf`).
 
-## Decommissioning the old multi-region sets (one-time, already done)
+## Decommissioning the old multi-region sets
 
-When consolidating, the `nbg1` / `hel1` MachineClasses and MachineSets must be
-deleted from Omni so Terraform stops tracking them:
-
-```bash
-omnictl delete machinesets cloud-ops-workers-nbg1 cloud-ops-workers-hel1
-omnictl delete machineclasses cloud-ops-hetzner-workers-nbg1 cloud-ops-hetzner-workers-hel1
-```
+The stale `nbg1` / `hel1` MachineClasses were imported into Terraform state
+(without corresponding config) so the next `terraform apply` destroys them —
+no manual `omnictl delete machineclasses` needed. The `nbg1` / `hel1`
+MachineSets were already tearing down in Omni when the consolidation shipped.
+If the machine class destroy fails on the first apply (because a tearing-down
+machine set still references it), retry once the sets finish de-provisioning.

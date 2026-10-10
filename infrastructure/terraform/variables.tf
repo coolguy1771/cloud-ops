@@ -15,7 +15,7 @@ variable "cluster_name" {
 # Upload it to Hetzner with Packer (see infrastructure/terraform/packer/) or hcloud-upload-image,
 # then set this to the resulting snapshot ID.
 variable "talos_image_id" {
-  description = "Hetzner snapshot ID of the Omni-registered Talos image (must be Talos v1.13.x for K8s 1.36.x)"
+  description = "Hetzner snapshot ID of the Omni-registered Talos image (must be Talos v1.14.x for K8s 1.36.x)"
   type        = string
 }
 
@@ -167,6 +167,6 @@ variable "kubernetes_version" {
 variable "talos_version" {
   description = "Talos version for the Omni cluster (semver, no v prefix)"
   type        = string
-  default     = "1.13.7"
+  default     = "1.14.2"
 }
 
