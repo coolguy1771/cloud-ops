@@ -23,8 +23,77 @@ resource "cloudflare_ruleset" "zone_managed_waf" {
   kind        = "zone"
   phase       = "http_request_firewall_managed"
 
-  # refs match the IDs of the rules that existed before Terraform managed them.
+  # Exceptions (skip) come first: a skip only bypasses execute rules listed
+  # after it. Keep them scoped to host + path, and prefer skipping a single rule
+  # ID over a whole ruleset when Security Events names the rule.
+  # refs of the execute rules match the IDs that existed before Terraform.
   rules = [
+    {
+      # snappy/protobuf/OTLP bodies the WAF cannot parse meaningfully. The CVE
+      # ruleset still runs and the gateway still requires a JWT.
+      ref         = "exception_owasp_lgtm_ingest"
+      description = "Exception: OWASP on LGTM ingest paths"
+      enabled     = true
+      action      = "skip"
+      expression  = <<-EOT
+        http.request.method eq "POST" and (
+          (http.host eq "loki.cloud.witl.xyz" and http.request.uri.path eq "/loki/api/v1/push") or
+          (http.host eq "mimir.cloud.witl.xyz" and http.request.uri.path in {"/api/v1/push" "/otlp/v1/metrics"}) or
+          (http.host eq "tempo.cloud.witl.xyz" and starts_with(http.request.uri.path, "/v1/traces"))
+        )
+      EOT
+      action_parameters = {
+        rulesets = [local.cloudflare_owasp_ruleset_id]
+      }
+      logging = { enabled = true }
+    },
+    {
+      # PromQL/LogQL/TraceQL ({...}, |~, regexes) read as injection to OWASP.
+      ref         = "exception_owasp_grafana_query"
+      description = "Exception: OWASP on Grafana query APIs"
+      enabled     = true
+      action      = "skip"
+      expression  = <<-EOT
+        http.host eq "grafana.cloud.witl.xyz" and (
+          http.request.uri.path eq "/api/ds/query" or
+          starts_with(http.request.uri.path, "/api/prometheus/") or
+          starts_with(http.request.uri.path, "/api/datasources/proxy/")
+        )
+      EOT
+      action_parameters = {
+        rulesets = [local.cloudflare_owasp_ruleset_id]
+      }
+      logging = { enabled = true }
+    },
+    {
+      # Ruler/Alertmanager config clients (mimirtool, Alloy mimir.rules) send
+      # YAML without Content-Type.
+      ref         = "exception_mimir_config_content_type"
+      description = "Exception: Content-Type missing rule on Mimir ruler/alertmanager config API"
+      enabled     = true
+      action      = "skip"
+      expression  = "http.host eq \"mimir.cloud.witl.xyz\" and (starts_with(http.request.uri.path, \"/prometheus/config/v1/rules\") or http.request.uri.path eq \"/api/v1/alerts\")"
+      action_parameters = {
+        rules = {
+          (local.cloudflare_managed_ruleset_id) = ["3c51b23dc24f439d904e0f1054622f7d"] # Anomaly:Header:Content-Type - Missing
+        }
+      }
+      logging = { enabled = true }
+    },
+    {
+      # Token calls from Authentik clients tripped this (normally disabled) rule.
+      ref         = "exception_authentik_token_drupal_xff"
+      description = "Exception: Drupal XFF rule on Authentik OIDC token endpoint"
+      enabled     = true
+      action      = "skip"
+      expression  = "http.host eq \"${var.authentik_host}\" and starts_with(http.request.uri.path, \"/application/o/token\")"
+      action_parameters = {
+        rules = {
+          (local.cloudflare_managed_ruleset_id) = ["d6f6d394cb01400284cfb7971e7aed1e"] # Drupal - Anomaly:Header:X-Forwarded-For - CVE:CVE-2018-14774
+        }
+      }
+      logging = { enabled = true }
+    },
     {
       ref         = "e0c9c66c1200436eab807536e70a448b"
       description = "Cloudflare Managed Ruleset (default rules)"
