@@ -7,7 +7,6 @@ output "list_ids" {
   description = "Account IP list IDs referenced by the WAF rules"
   value = {
     manual_blocklist = cloudflare_list.manual_blocklist.id
-    telemetry_nodes  = cloudflare_list.telemetry_nodes.id
     trusted_ips      = cloudflare_list.trusted_ips.id
   }
 }

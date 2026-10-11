@@ -3,7 +3,10 @@ variable "cloudflare_api_token" {
     Cloudflare API token (optional if CLOUDFLARE_API_TOKEN is set). Required permissions:
       - Zone → Zone → Read (zone cloud.witl.xyz)
       - Zone → WAF → Edit
-      - Account → Account Filter Lists → Edit
+      - Zone → Bot Management → Edit
+      - Zone → Zone Settings → Edit
+      - Account → Account Rule Lists → Edit
+      - Account → Account Firewall Access Rules → Edit
     The external-dns dns-token is NOT sufficient (DNS-only). Prefer a dedicated
     1Password field e.g. cloudflare.waf-token.
   EOT
@@ -27,12 +30,6 @@ variable "authentik_host" {
   description = "Public Authentik hostname (OIDC discovery / token endpoints)"
   type        = string
   default     = "auth.cloud.witl.xyz"
-}
-
-variable "hetzner_asn" {
-  description = "Hetzner Online ASN — cloud-ops node egress (workers are rolled by Omni, so IPs are not stable). Matched only for machine-client hosts in waf.tf."
-  type        = string
-  default     = "24940"
 }
 
 variable "zone_custom_firewall_ruleset_id" {

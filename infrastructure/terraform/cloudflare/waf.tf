@@ -1,23 +1,33 @@
 locals {
-  # Hosts that machine clients (Alloy, cloud-ops Grafana/OIDC clients) call directly.
-  machine_client_hosts = [
-    var.authentik_host,
+  # Machine-only API hosts. Every request is authenticated at the origin (JWT at
+  # the Istio gateway for loki/mimir/tempo, HMAC-signed receiver URLs for Flux
+  # webhooks), and every legitimate client is automated, so bot scoring and the
+  # geo challenge add friction without protection. Managed WAF still applies.
+  api_hosts = [
     "loki.cloud.witl.xyz",
     "mimir.cloud.witl.xyz",
     "tempo.cloud.witl.xyz",
+    "flux-webhook.cloud.witl.xyz",
+    "flux-webhook.witl.xyz",
   ]
 
-  # Phases skipped for trusted sources. witl.xyz is on Pro, so Super Bot Fight
-  # Mode (http_request_sbfm) can be skipped here without an IP Access rule.
+  # Phases skipped for trusted operator IPs. witl.xyz is on Pro, so Super Bot
+  # Fight Mode (http_request_sbfm) can be skipped here without an IP Access rule.
+  # Managed WAF (http_request_firewall_managed) is deliberately not skipped:
+  # trusted sources still get CVE/OWASP inspection. Tune false positives with
+  # targeted exceptions in managed.tf instead.
   trusted_skip_phases = [
     "http_ratelimit",
-    "http_request_firewall_managed",
     "http_request_sbfm",
   ]
 
+  # Bot fight mode and the geo challenge apply to interactive hosts only
+  # (Authentik login, Grafana, Kiali, Hubble, public witl.xyz sites); API hosts
+  # and Authentik's machine OIDC endpoints are exempted by host/path, not by
+  # source IP or ASN, so new clients need no rule changes.
+  #
   # Order matters: a skip with ruleset = "current" ends evaluation of this
-  # ruleset, so every source-based skip must come before the path-based
-  # Authentik rule or it never runs for the token endpoints.
+  # ruleset (including the geo challenge at the end).
   # refs match the IDs of the rules that existed before Terraform managed them.
   zone_custom_firewall_rules = [
     {
@@ -48,21 +58,22 @@ locals {
     },
     {
       ref         = "e0ea66e29e1043f192660b97d5731c74"
-      description = "Skip: machine clients ($telemetry_nodes, cloud-ops AS${var.hetzner_asn}) -> auth/loki/mimir/tempo"
+      description = "Skip: authenticated API hosts (loki/mimir/tempo/flux-webhook) -> bot fight mode, geo"
       enabled     = true
       action      = "skip"
-      expression  = "(ip.src in $telemetry_nodes or ip.src.asnum eq ${var.hetzner_asn}) and http.host in {${join(" ", [for h in local.machine_client_hosts : "\"${h}\""])}}"
+      expression  = "http.host in {${join(" ", [for h in local.api_hosts : "\"${h}\""])}}"
       action_parameters = {
-        phases  = local.trusted_skip_phases
+        phases  = ["http_request_sbfm"]
         ruleset = "current"
       }
       logging = { enabled = true }
     },
     {
-      # Everyone else still goes through managed WAF + rate limiting on these
-      # paths; only bot fight mode and the geo challenge below are skipped.
+      # Grafana/istiod/authservice in the cluster and external Alloy agents call
+      # these. Login and admin paths stay behind bot fight mode, the geo
+      # challenge and the interactive-auth rate limit.
       ref         = "4d2b736a6b2f4fe3b8731c1aa38a4a9f"
-      description = "Skip: Authentik machine OIDC endpoints (token/userinfo/introspect/JWKS/discovery)"
+      description = "Skip: Authentik machine OIDC endpoints (token/userinfo/introspect/JWKS/discovery) -> bot fight mode, geo"
       enabled     = true
       action      = "skip"
       expression  = <<-EOT
@@ -81,19 +92,8 @@ locals {
       logging = { enabled = true }
     },
     {
-      ref         = "14fd2feeb17f4117bf6894b5694acce0"
-      description = "Skip: GitHub (AS36459) -> flux webhooks"
-      enabled     = true
-      action      = "skip"
-      expression  = "ip.src.asnum eq 36459 and http.host in {\"flux-webhook.witl.xyz\" \"flux-webhook.cloud.witl.xyz\"}"
-      action_parameters = {
-        ruleset = "current"
-      }
-      logging = { enabled = true }
-    },
-    {
       ref         = "25a8900753454f0eaa01e21ba5f0ec76"
-      description = "Challenge: traffic outside CA/IE/GB/US/PT"
+      description = "Challenge: interactive traffic outside CA/IE/GB/US/PT"
       enabled     = true
       action      = "managed_challenge"
       expression  = "not ip.src.country in {\"CA\" \"IE\" \"GB\" \"US\" \"PT\"}"
@@ -112,7 +112,6 @@ resource "cloudflare_ruleset" "zone_custom_firewall" {
   # Rule expressions reference these lists by name.
   depends_on = [
     cloudflare_list.manual_blocklist,
-    cloudflare_list.telemetry_nodes,
     cloudflare_list.trusted_ips,
   ]
 }
