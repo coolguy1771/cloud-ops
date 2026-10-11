@@ -54,13 +54,13 @@ spec:
         secretName: authentik-secrets
       error_reporting:
         enabled: false
-      email:
-        host: "smtp.fastmail.com"
-        port: 587
-        use_tls: true
-        use_ssl: false
-        timeout: 30
-        from: "authentik@cloud.witl.xyz"
+      # NOTE: authentik.email (host/port/use_tls/from) is NOT rendered by the chart when
+      # existingSecret.secretName is set - templates/secret.yaml's AUTHENTIK_* rendering is
+      # gated on `not .Values.authentik.existingSecret.secretName`, so the block here is dead
+      # config. Email settings are supplied as plain env vars in global.env below (host/port/
+      # tls/from are non-secret) and AUTHENTIK_EMAIL__USERNAME/PASSWORD come from authentik-secrets
+      # via the ExternalSecret template. Without these env vars authentik falls back to its
+      # default smtp localhost:25, which produces ConnectionRefusedError on every send.
     global:
       topologySpreadConstraints:
         - maxSkew: 1
@@ -112,6 +112,21 @@ spec:
           value: verify-full
         - name: AUTHENTIK_POSTGRESQL__SSLROOTCERT
           value: /etc/ssl/certs/postgres-ca.crt
+        # Outbound email via Fastmail. AUTHENTIK_EMAIL__USERNAME/PASSWORD come from the
+        # authentik-secrets ExternalSecret (smtp-relay 1Password item); the rest are non-secret
+        # and set here because the chart's authentik.email block is inert under existingSecret.
+        - name: AUTHENTIK_EMAIL__HOST
+          value: smtp.fastmail.com
+        - name: AUTHENTIK_EMAIL__PORT
+          value: "587"
+        - name: AUTHENTIK_EMAIL__USE_TLS
+          value: "true"
+        - name: AUTHENTIK_EMAIL__USE_SSL
+          value: "false"
+        - name: AUTHENTIK_EMAIL__TIMEOUT
+          value: "30"
+        - name: AUTHENTIK_EMAIL__FROM
+          value: authentik@cloud.witl.xyz
         # Trust mesh/proxy hops; gateway Lua sets X-Real-IP / X-Forwarded-For from CF-Connecting-IP.
         - name: AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS
           value: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7"
