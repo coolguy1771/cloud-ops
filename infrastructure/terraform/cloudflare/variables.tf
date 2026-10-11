@@ -32,12 +32,6 @@ variable "authentik_host" {
   default     = "auth.cloud.witl.xyz"
 }
 
-variable "hetzner_asn" {
-  description = "Hetzner Online ASN — cloud-ops node egress (workers are rolled by Omni, so IPs are not stable). Matched only for machine-client hosts in waf.tf."
-  type        = string
-  default     = "24940"
-}
-
 variable "zone_custom_firewall_ruleset_id" {
   description = <<-EOT
     Existing zone entry-point ruleset ID for phase http_request_firewall_custom.

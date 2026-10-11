@@ -20,17 +20,6 @@ resource "cloudflare_list" "trusted_ips" {
   ]
 }
 
-resource "cloudflare_list" "telemetry_nodes" {
-  account_id  = var.cloudflare_account_id
-  name        = "telemetry_nodes"
-  kind        = "ip"
-  description = "Static-IP machine clients (Alloy agents) exempt from the geo challenge and bot fight mode on telemetry/OIDC hosts. cloud-ops egress is matched by ASN instead."
-  items = [
-    { ip = "136.61.29.147", comment = "Alloy agent pushing to loki/mimir/tempo" },
-    { ip = "2604:2dc0:100:338c::/64", comment = "OVH node - Alloy agent (AS16276)" },
-  ]
-}
-
 import {
   to = cloudflare_list.manual_blocklist
   id = "${var.cloudflare_account_id}/3e6f0300c66c4e998a8b89cdd51f1b3f"
@@ -39,9 +28,4 @@ import {
 import {
   to = cloudflare_list.trusted_ips
   id = "${var.cloudflare_account_id}/03d58a49d9c64cdb85ba52c55e67eb22"
-}
-
-import {
-  to = cloudflare_list.telemetry_nodes
-  id = "${var.cloudflare_account_id}/733a2d9561c149828e37a10eb1873d5d"
 }
