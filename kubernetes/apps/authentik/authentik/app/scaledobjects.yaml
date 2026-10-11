@@ -1,5 +1,13 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/keda.sh/scaledobject_v1alpha1.json
+# KEDA autoscaling per https://docs.goauthentik.io/sys-mgmt/ops/autoscaling/keda/
+# The chart's own HPAs are deleted via postRenderers in helmrelease.yaml so KEDA is the
+# sole autoscaler. Both ScaledObjects keep minReplicaCount: 2 for HA (docs recommend >=2
+# on different nodes; topologySpreadConstraints in helmrelease.yaml handles placement).
+#
+# Server: CPU Utilization trigger (docs recommendation). Targets 75% of the 100m CPU
+# request = 75m average per pod. Simpler than a prometheus trigger and needs no external
+# metric store. Requires a resource-metrics API (metrics-server, confirmed available).
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -13,7 +21,7 @@ spec:
     horizontalPodAutoscalerConfig:
       behavior:
         scaleDown:
-          stabilizationWindowSeconds: 600
+          stabilizationWindowSeconds: 300
           policies:
             - type: Percent
               value: 50
@@ -21,15 +29,16 @@ spec:
         scaleUp:
           stabilizationWindowSeconds: 120
   triggers:
-    - type: prometheus
+    - type: cpu
+      metricType: Utilization
       metadata:
-        serverAddress: http://mimir-app.mimir-system.svc.cluster.local:8080/prometheus
-        customHeaders: X-Scope-OrgID=witl-xyz
-        query: sum(rate(authentik_main_request_duration_seconds_count{job="authentik-server-metrics"}[2m]))
-        threshold: "50"
+        value: "75"
 ---
-# max(), not sum(): authentik_tasks_queued reflects the shared DB-backed task queue,
-# reported identically by every pod — summing would multiply the value by pod count.
+# Worker: prometheus trigger on the shared DB-backed task queue. The query follows the
+# docs pattern: max-by-(queue,actor) dedupes the identical count every pod reports, then
+# sum gives the true total queued-task count across all queues/actors. The service label
+# filters to worker metrics only (server pods export the same metric). metricType
+# AverageValue with threshold 20 targets ~20 queued tasks per worker replica.
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -43,7 +52,7 @@ spec:
     horizontalPodAutoscalerConfig:
       behavior:
         scaleDown:
-          stabilizationWindowSeconds: 600
+          stabilizationWindowSeconds: 300
           policies:
             - type: Percent
               value: 50
@@ -52,8 +61,10 @@ spec:
           stabilizationWindowSeconds: 120
   triggers:
     - type: prometheus
+      metricType: AverageValue
       metadata:
         serverAddress: http://mimir-app.mimir-system.svc.cluster.local:8080/prometheus
         customHeaders: X-Scope-OrgID=witl-xyz
-        query: max(authentik_tasks_queued)
-        threshold: "10"
+        query: sum(max by (queue_name, actor_name) (authentik_tasks_queued{service="authentik-worker-metrics"}))
+        threshold: "20"
+        ignoreNullValues: "false"
