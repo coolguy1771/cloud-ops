@@ -9,15 +9,19 @@ locals {
 
   # Phases skipped for trusted sources. witl.xyz is on Pro, so Super Bot Fight
   # Mode (http_request_sbfm) can be skipped here without an IP Access rule.
+  # Managed WAF (http_request_firewall_managed) is deliberately not skipped:
+  # trusted sources still get CVE/OWASP inspection, so a compromised agent,
+  # recycled home IP or rented Hetzner VPS gets no free pass. Tune false
+  # positives with targeted exceptions in managed.tf instead.
   trusted_skip_phases = [
     "http_ratelimit",
-    "http_request_firewall_managed",
     "http_request_sbfm",
   ]
 
   # Order matters: a skip with ruleset = "current" ends evaluation of this
   # ruleset, so every source-based skip must come before the path-based
-  # Authentik rule or it never runs for the token endpoints.
+  # Authentik rule or it never runs for the token endpoints. ruleset =
+  # "current" also skips the geo challenge at the end for these sources.
   # refs match the IDs of the rules that existed before Terraform managed them.
   zone_custom_firewall_rules = [
     {

@@ -13,7 +13,7 @@ resource "cloudflare_list" "trusted_ips" {
   account_id  = var.cloudflare_account_id
   name        = "trusted_ips"
   kind        = "ip"
-  description = "Operator/home IPs exempt from geo, bot, managed WAF and rate limiting."
+  description = "Operator/home IPs exempt from the geo challenge, bot fight mode and rate limiting (managed WAF still applies)."
   items = [
     { ip = "74.110.253.209", comment = "Home IPv4" },
     { ip = "2600:4040:11a8:ef00::/56", comment = "Home Verizon IPv6 /56 delegation - covers ef02/ef04 rotation" },
@@ -24,7 +24,7 @@ resource "cloudflare_list" "telemetry_nodes" {
   account_id  = var.cloudflare_account_id
   name        = "telemetry_nodes"
   kind        = "ip"
-  description = "Static-IP machine clients (Alloy agents) allowed to skip WAF on telemetry/OIDC hosts. cloud-ops egress is matched by ASN instead."
+  description = "Static-IP machine clients (Alloy agents) exempt from the geo challenge and bot fight mode on telemetry/OIDC hosts. cloud-ops egress is matched by ASN instead."
   items = [
     { ip = "136.61.29.147", comment = "Alloy agent pushing to loki/mimir/tempo" },
     { ip = "2604:2dc0:100:338c::/64", comment = "OVH node - Alloy agent (AS16276)" },

@@ -3,7 +3,10 @@ variable "cloudflare_api_token" {
     Cloudflare API token (optional if CLOUDFLARE_API_TOKEN is set). Required permissions:
       - Zone → Zone → Read (zone cloud.witl.xyz)
       - Zone → WAF → Edit
-      - Account → Account Filter Lists → Edit
+      - Zone → Bot Management → Edit
+      - Zone → Zone Settings → Edit
+      - Account → Account Rule Lists → Edit
+      - Account → Account Firewall Access Rules → Edit
     The external-dns dns-token is NOT sufficient (DNS-only). Prefer a dedicated
     1Password field e.g. cloudflare.waf-token.
   EOT
