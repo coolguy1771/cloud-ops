@@ -65,7 +65,7 @@ spec:
       serviceAccountName: authservice
       containers:
         - name: authservice
-          image: ghcr.io/istio-ecosystem/authservice/authservice:1.1.8
+          image: ghcr.io/istio-ecosystem/authservice/authservice:1.1.9
           imagePullPolicy: IfNotPresent
           ports:
             - name: authz
