@@ -42,6 +42,15 @@ spec:
   values:
     fullnameOverride: tempo
     multitenancyEnabled: true
+    tempo:
+      structuredConfig:
+        compactor:
+          ring:
+            # The chart always sets a memberlist kvstore, which makes Tempo treat
+            # the single compactor as sharded and wait 1-5m for ring stability
+            # before /ready. That plus the initial blocklist poll outlasts the
+            # chart's shared 60s+30s liveness budget, so it never compacts.
+            wait_stability_min_duration: 0s
     traces:
       otlp:
         http:
@@ -64,10 +73,10 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 256Mi
+          memory: 512Mi
         limits:
           cpu: 500m
-          memory: 1Gi
+          memory: 2Gi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
@@ -129,10 +138,10 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 128Mi
+          memory: 256Mi
         limits:
           cpu: 500m
-          memory: 512Mi
+          memory: 1Gi
       extraArgs:
         - "-config.expand-env=true"
       extraEnvFrom:
