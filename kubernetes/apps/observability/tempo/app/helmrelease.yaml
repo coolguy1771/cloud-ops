@@ -30,6 +30,29 @@ spec:
               kind: HorizontalPodAutoscaler
               metadata:
                 name: tempo-querier
+          # Compactor's startup blocklist poll (meta.json per block across all
+          # tenants) can exceed the shared tempo.livenessProbe window
+          # (60s + 3x10s); gate liveness behind a startupProbe (up to 15m).
+          - target:
+              kind: Deployment
+              name: tempo-compactor
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: tempo-compactor
+              spec:
+                template:
+                  spec:
+                    containers:
+                      - name: compactor
+                        startupProbe:
+                          httpGet:
+                            path: /ready
+                            port: http-metrics
+                          periodSeconds: 10
+                          timeoutSeconds: 5
+                          failureThreshold: 90
           - target:
               kind: HorizontalPodAutoscaler
               name: tempo-query-frontend
@@ -140,7 +163,7 @@ spec:
           cpu: 100m
           memory: 256Mi
         limits:
-          cpu: 500m
+          cpu: "1"
           memory: 1Gi
       extraArgs:
         - "-config.expand-env=true"
