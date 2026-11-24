@@ -161,12 +161,17 @@ spec:
       resources:
         requests:
           cpu: 100m
-          memory: 256Mi
+          memory: 1Gi
         limits:
           cpu: "1"
-          memory: 1Gi
+          # OOMKilled at 1Gi merging 4x ~50MB level-1 helo blocks.
+          memory: 3Gi
       extraArgs:
         - "-config.expand-env=true"
+      extraEnv:
+        # Soft limit ~85% of the container limit so GC tightens before OOM.
+        - name: GOMEMLIMIT
+          value: "2600MiB"
       extraEnvFrom:
         - secretRef:
             name: tempo-r2-credentials
