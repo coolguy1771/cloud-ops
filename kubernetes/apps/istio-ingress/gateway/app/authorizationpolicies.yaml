@@ -186,13 +186,9 @@ spec:
       when:
         - key: request.auth.claims[scope]
           values: ["mimir:write"]
-    # Read/query + operational endpoints (mimir:read scope).
-    # Destructive sub-paths (shutdown, prepare-*, delete_tenant_config,
-    # delete_tenant) are excluded by listing only safe sub-paths.
-    # Destructive sub-paths (shutdown, prepare-*, delete_tenant_config,
-    # delete_tenant) remain excluded. DELETE on /api/v1/alerts (Alertmanager
-    # config) and /prometheus/config/v1/rules/* (ruler rules) is allowed in
-    # separate rules below.
+    # Grafana (OIDC users, tenant scope): query + operational endpoints. Destructive
+    # sub-paths (shutdown, prepare-*, delete_tenant*, flush) and pprof/config are
+    # excluded by listing only safe sub-paths. Rule/Alertmanager CRUD is below.
     - to:
         - operation:
             hosts: ["mimir.cloud.witl.xyz"]
@@ -213,12 +209,11 @@ spec:
               - "/multitenant_alertmanager/ring"
               # Alertmanager configuration (GET/POST; DELETE via separate rule below)
               - "/api/v1/alerts"
-              # Ingester (ring, tenants, tsdb, flush — no shutdown/prepare-*)
+              # Ingester (ring, tenants, tsdb — no flush/shutdown/prepare-*)
               - "/ingester/ring"
               - "/ingester/tenants"
               - "/ingester/tsdb/*"
               - "/ingester/tsdb_metrics"
-              - "/ingester/flush"
               # Store-gateway (ring, tenants, tenant blocks — no prepare-shutdown)
               - "/store-gateway/ring"
               - "/store-gateway/tenants"
@@ -236,10 +231,6 @@ spec:
               - "/api/v1/user_limits"
               # Tenant ingestion stats (querier)
               - "/api/v1/user_stats"
-              # Configuration (all services)
-              - "/config"
-              # Runtime configuration (all services)
-              - "/runtime_config"
               # Services' status (all services)
               - "/services"
               # Metrics (all services)
@@ -248,8 +239,6 @@ spec:
               - "/memberlist"
               # Status endpoints (config, flags, buildinfo)
               - "/api/v1/status/*"
-              # Debug (pprof, fgprof)
-              - "/debug/*"
       when:
         - key: request.auth.claims[iss]
           values: ["https://auth.cloud.witl.xyz/application/o/grafana/"]
@@ -279,86 +268,68 @@ spec:
           values: ["https://auth.cloud.witl.xyz/application/o/grafana/"]
         - key: request.auth.claims[scope]
           values: ["tenant"]
+    # mimir:read is strictly read-only: GET on query + status pages, POST only on the
+    # Prometheus query API (query/query_range/series/labels accept form POSTs).
+    # Excluded: /debug/* (pprof), /config + /runtime_config, /metrics, /ingester/flush,
+    # and every ruler/alertmanager mutation (those need mimir:admin below).
     - to:
         - operation:
             hosts: ["mimir.cloud.witl.xyz"]
-            methods: ["GET", "POST"]
+            methods: ["GET"]
             paths:
-              # Query-frontend + ruler read (Prometheus API under /prometheus)
-              - "/prometheus/*"
-              - "/prometheus"
-              # Ruler read-only (ring, rule_groups)
+              - "/prometheus/api/v1/*"
+              - "/prometheus/config/v1/rules"
+              - "/prometheus/config/v1/rules/*"
+              - "/api/v1/alerts"
               - "/ruler/ring"
               - "/ruler/rule_groups"
-              # Alertmanager UI + buildinfo
               - "/alertmanager/*"
               - "/alertmanager"
-              # Alertmanager operational (status, configs, ring)
               - "/multitenant_alertmanager/status"
               - "/multitenant_alertmanager/configs"
               - "/multitenant_alertmanager/ring"
-              # Alertmanager configuration (GET/POST; DELETE via separate rule below)
-              - "/api/v1/alerts"
-              # Ingester (ring, tenants, tsdb, flush — no shutdown/prepare-*)
               - "/ingester/ring"
               - "/ingester/tenants"
               - "/ingester/tsdb/*"
               - "/ingester/tsdb_metrics"
-              - "/ingester/flush"
-              # Store-gateway (ring, tenants, tenant blocks — no prepare-shutdown)
               - "/store-gateway/ring"
               - "/store-gateway/tenants"
               - "/store-gateway/tenant/*"
-              # Compactor (ring, tenants, planned_jobs, delete_tenant_status — no delete_tenant)
               - "/compactor/ring"
               - "/compactor/tenants"
               - "/compactor/tenant/*"
               - "/compactor/delete_tenant_status"
-              # Query-scheduler ring status
               - "/query-scheduler/ring"
-              # Overrides-exporter ring status
               - "/overrides-exporter/ring"
-              # Tenant limits (all services)
               - "/api/v1/user_limits"
-              # Tenant ingestion stats (querier)
               - "/api/v1/user_stats"
-              # Configuration (all services)
-              - "/config"
-              # Runtime configuration (all services)
-              - "/runtime_config"
-              # Services' status (all services)
               - "/services"
-              # Metrics (all services)
-              - "/metrics"
-              # Memberlist cluster (all services)
               - "/memberlist"
-              # Status endpoints (config, flags, buildinfo)
               - "/api/v1/status/*"
-              # Debug (pprof, fgprof)
-              - "/debug/*"
       when:
         - key: request.auth.claims[scope]
           values: ["mimir:read"]
-    # Ruler rules CRUD (GET/POST/DELETE on /prometheus/config/v1/rules/*).
+    - to:
+        - operation:
+            hosts: ["mimir.cloud.witl.xyz"]
+            methods: ["POST"]
+            paths:
+              - "/prometheus/api/v1/*"
+      when:
+        - key: request.auth.claims[scope]
+          values: ["mimir:read"]
+    # mimir:admin: ruler rules + Alertmanager config CRUD (mimirtool-load-*.sh).
     - to:
         - operation:
             hosts: ["mimir.cloud.witl.xyz"]
             methods: ["GET", "POST", "DELETE"]
             paths:
+              - "/prometheus/config/v1/rules"
               - "/prometheus/config/v1/rules/*"
-      when:
-        - key: request.auth.claims[scope]
-          values: ["mimir:read"]
-    # Alertmanager config deletion (DELETE /api/v1/alerts).
-    - to:
-        - operation:
-            hosts: ["mimir.cloud.witl.xyz"]
-            methods: ["DELETE"]
-            paths:
               - "/api/v1/alerts"
       when:
         - key: request.auth.claims[scope]
-          values: ["mimir:read"]
+          values: ["mimir:admin"]
 ---
 
 # Hubble UI: OIDC session via authservice (CUSTOM). Group gate is Authentik's
